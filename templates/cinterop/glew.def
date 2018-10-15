@@ -1,0 +1,6 @@
+headers = @ROOT@/thirdparty/glew/include/Gl/glew.h @ROOT@/thirdparty/glew/include/Gl/wglew.h
+package = glew
+staticLibraries = libglew32d.a
+libraryPaths = @ROOT@/thirdparty/glew/build/cmake/cmake-build-debug/lib
+linkerOpts = -L @ROOT@/thirdparty/glew/build/cmake/cmake-build-debug/lib -l glew32d
+compilerOpts = -m64 -DGLEW_STATIC

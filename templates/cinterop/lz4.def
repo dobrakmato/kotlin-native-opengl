@@ -1,0 +1,6 @@
+headers = @ROOT@/thirdparty/lz4/lib/lz4.h @ROOT@/thirdparty/lz4/lib/lz4hc.h @ROOT@/thirdparty/lz4/lib/lz4frame.h
+package = lz4
+staticLibraries = liblz4.a
+libraryPaths = @ROOT@/thirdparty/lz4/contrib/cmake_unofficial/cmake-build-debug
+linkerOpts = -L @ROOT@/thirdparty/lz4/contrib/cmake_unofficial/cmake-build-debug -l lz4
+compilerOpts = -m64

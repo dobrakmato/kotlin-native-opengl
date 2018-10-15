@@ -1,0 +1,6 @@
+headers = @ROOT@/thirdparty/glfw/include/GLFW/glfw3.h @ROOT@/thirdparty/glfw/include/GLFW/glfw3native.h
+package = glfw
+staticLibraries = libglfw3.a
+libraryPaths = @ROOT@/thirdparty/glfw/cmake-build-debug/src
+linkerOpts = -L @ROOT@/thirdparty/glfw/cmake-build-debug/src -l glfw3 -lgdi32 -lopengl32
+compilerOpts = -m64
