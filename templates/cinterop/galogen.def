@@ -1,0 +1,6 @@
+headers = @ROOT@/thirdparty/galogen/build/clib/gl.h
+package = galogen
+staticLibraries = libgalogen.a
+libraryPaths = @ROOT@/thirdparty/galogen/build/clib/cmake-build-debug
+linkerOpts = -L @ROOT@/thirdparty/galogen/build/clib/cmake-build-debug -l galogen -lopengl32
+compilerOpts = -m64

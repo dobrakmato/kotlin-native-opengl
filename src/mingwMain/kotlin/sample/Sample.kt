@@ -1,6 +1,6 @@
 package sample
 
-import glew.*
+import galogen.*
 import glfw.*
 import kotlinx.cinterop.*
 
@@ -29,32 +29,22 @@ fun main(args: Array<String>) {
 
     glfwMakeContextCurrent(window)
 
-    val err = glewInit()
-
-    if (err.toInt() != GLEW_OK) {
-        print("GLEW Error $err")
-    }
-
-    println("Status: Using GLEW " + glewGetString(GLEW_VERSION)?.reinterpret<ByteVar>()?.toKString())
     println("OpenGL Version: " + glGetString(GL_VERSION)?.reinterpret<ByteVar>()?.toKString())
     println("OpenGL Version: " + glGetString(GL_VENDOR)?.reinterpret<ByteVar>()?.toKString())
     println("OpenGL Version: " + glGetString(GL_RENDERER)?.reinterpret<ByteVar>()?.toKString())
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f)
 
+    var id = glCreateShader(GL_VERTEX_SHADER)
+    var id2 = glCreateShader(GL_VERTEX_SHADER.toUInt())
+    var id3 = glCreateShader(GL_VERTEX_SHADER.toUInt())
+
+    println("Created shader ID: $id")
+    println("Created shader ID: $id2")
+    println("Created shader ID: $id3")
+
     do {
         glClear(GL_COLOR_BUFFER_BIT)
-
-        glBegin(GL_TRIANGLES)
-
-        glColor3f(1f, 0f, 0f)
-        glVertex2f(-.5f, -.5f)
-        glColor3f(0f, 1f, 0f)
-        glVertex2f(.5f, -.5f)
-        glColor3f(0f, 0f, 1f)
-        glVertex2f(0f, .5f)
-
-        glEnd()
 
         glfwSwapBuffers(window)
         glfwPollEvents()
