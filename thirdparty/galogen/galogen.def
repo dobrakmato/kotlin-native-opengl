@@ -1,0 +1,2 @@
+headers = C:/galogen/build/clib/gl.h
+linkerOpts = C:/galogen/build/clib/gl.o -lopengl32
