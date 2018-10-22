@@ -12,11 +12,22 @@ kotlin {
         // For Linux, preset should be changed to e.g. presets.linuxX64
         // For MacOS, preset should be changed to e.g. presets.macosX64
         fromPreset(presets.mingwX64, 'mingw')
+        fromPreset(presets.mingwX64, 'imgconv')
+
+        configure([imgconv]) {
+            compilations.main.outputKinds('EXECUTABLE')
+            compilations.main.entryPoint = 'imgconv.main'
+
+            compilations.main {
+                cinterops {
+                    stb {
+                    }
+                }
+            }
+        }
 
         configure([mingw]) {
-            // Comment to generate Kotlin/Native library (KLIB) instead of executable file:
             compilations.main.outputKinds('EXECUTABLE')
-            // Change to specify fully qualified name of your application's entry point:
             compilations.main.entryPoint = 'sample.main'
 
             compilations.main {
@@ -34,11 +45,24 @@ kotlin {
     sourceSets {
         // Note: To enable common source sets please comment out 'kotlin.import.noCommonSourceSets' property
         // in gradle.properties file and re-import your project in IDE.
+        imgconvMain {
+        }
         mingwMain {
         }
         mingwTest {
         }
     }
+}
+
+/* Workaround for broken relative paths in cinterop .def files */
+task generateInterops(type: Copy) {
+    from 'templates/cinterop'
+    into 'src/nativeInterop/cinterop'
+    filter { line -> line.replaceAll('@ROOT@', file('.').toString().replace("\\", "/")) }
+}
+
+task buildNativeProjects {
+    generateInterops.execute()
 }
 
 task runProgram {
@@ -51,11 +75,4 @@ task runProgram {
             args ''
         }
     }
-}
-
-/* Workaround for broken relative paths in cinterop .def files */
-task generateInterops(type: Copy) {
-    from 'templates/cinterop'
-    into 'src/nativeInterop/cinterop'
-    filter { line -> line.replaceAll('@ROOT@', file('.').toString().replace("\\", "/")) }
 }

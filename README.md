@@ -9,6 +9,6 @@ sometime in the future.
 ## Building
 Building is currently very complicated.
 
-1. Build all projects in thirdparty folder using CMake.
-2. Run generateInterops gradle task.
+1. Build all native projects in `thirdparty` folder using cmake to `cmake-build-debug` directories.
+2. Run `:generateInterops` gradle task.
 3. Build gradle project.

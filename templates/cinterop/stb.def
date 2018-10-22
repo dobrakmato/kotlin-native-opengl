@@ -1,0 +1,6 @@
+headers = @ROOT@/thirdparty/stb/stb_bindings.h
+package = stb
+staticLibraries = libstb.a
+libraryPaths = @ROOT@/thirdparty/stb/cmake-build-debug
+linkerOpts = -L @ROOT@/thirdparty/stb/cmake-build-debug -l stb
+compilerOpts = -m64
