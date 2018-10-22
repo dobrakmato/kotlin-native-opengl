@@ -96,6 +96,5 @@ modules.xml
 
 # End of https://www.gitignore.io/api/cmake,intellij+all
 
-build/galogen
-build/clib/cmake-build-debug
+!build/clib/CMakeLists.txt
 out/*
