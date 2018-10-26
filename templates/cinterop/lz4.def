@@ -3,4 +3,4 @@ package = lz4
 staticLibraries = liblz4.a
 libraryPaths = @ROOT@/thirdparty/lz4/contrib/cmake_unofficial/cmake-build-debug
 linkerOpts = -L @ROOT@/thirdparty/lz4/contrib/cmake_unofficial/cmake-build-debug -l lz4
-compilerOpts = -m64
+compilerOpts = -m64 -m64

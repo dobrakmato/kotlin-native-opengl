@@ -4,6 +4,7 @@ import galogen.*
 import glfw.*
 import kotlinx.cinterop.*
 import platform.opengl32.GL_TEXTURE_MAX_ANISOTROPY_EXT
+import kotlin.system.getTimeMillis
 
 @ExperimentalUnsignedTypes
 fun checkGLError() {
@@ -15,6 +16,7 @@ fun checkGLError() {
 
 @ExperimentalUnsignedTypes
 fun main(args: Array<String>) {
+    val start = getTimeMillis()
 
     if (glfwInit() != GLFW_TRUE) {
         throw Exception("Failed to initialize GLFW")
@@ -226,6 +228,8 @@ fun main(args: Array<String>) {
     println("debug msg inserted")
 
     glClearColor(0f,0f,0f,1f)
+
+    println("Started application in ${getTimeMillis() - start} ms.")
 
     val f = GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT
     var lastTime = 0.0

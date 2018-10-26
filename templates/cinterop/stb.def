@@ -3,4 +3,4 @@ package = stb
 staticLibraries = libstb.a
 libraryPaths = @ROOT@/thirdparty/stb/cmake-build-debug
 linkerOpts = -L @ROOT@/thirdparty/stb/cmake-build-debug -l stb
-compilerOpts = -m64
+compilerOpts = -m64 -m64
