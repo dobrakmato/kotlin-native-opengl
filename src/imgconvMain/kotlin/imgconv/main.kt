@@ -2,6 +2,7 @@ package imgconv
 
 import kotlinx.cinterop.*
 import lz4.*
+import bfinfo.*
 import platform.posix.exit
 import platform.posix.fclose
 import platform.posix.fopen
@@ -10,24 +11,6 @@ import stb.stbi_image_free
 import stb.stbi_load
 import stb.stbi_set_flip_vertically_on_load
 import kotlin.system.getTimeMillis
-
-class BFHeader {
-    val version: Byte = 1
-    val fileType: Byte = 1 // 1 = image, 2 = geometry, 3 = audio, 4 = material, 5 = vfs, 6 = compiled shader
-    val flags: Byte =
-        0x1 // 1 = lz4, 2 = hc, 4 = dxt, 8 = floating point, 16 = 16 bit texture, 32 = vertically flipped, 64 = gamma (SRGB), 128 = skybox
-    val extra: Byte = 3 // [_ _ _ _] mipmap levels [_] inline mipmaps [_ _ _] channels
-
-    val compressionSettings: Byte = 0 // 1 = lz4, 2 = lizard
-    val uncompressedSize: Int = 0
-
-    val width: UShort = 0u
-    val height: UShort = 0u
-
-    val data: Array<Char> = arrayOf()
-}
-
-const val BF_EXTENSION = "bf"
 
 fun replaceExtensionWith(name: String, newExtension: String): String {
     return "${name.substring(0, name.lastIndexOf('.'))}.$newExtension"
@@ -44,7 +27,7 @@ fun determineRequiredChannels(switches: String): Int {
 
 fun main(args: Array<String>) {
     if (args.size < 2) {
-        println("imgconv.exe -lhdfvrga16 INPUT_FILE [OUTPUT_FILE]")
+        println("imgconv.exe -lhdfvrga16s INPUT_FILE [OUTPUT_FILE]")
         println("    -l             : Enable LZ4 compression")
         println("    -h             : Use highest LZ4 compression level (slow)")
         println("    -d             : Use DXT compression")
@@ -92,27 +75,34 @@ fun main(args: Array<String>) {
             val data: CPointer<ByteVar> = pixelData!!.reinterpret()
             val maxCompressionLevel = LZ4F_compressionLevel_max()
             val compressedSize =
-                if (hc) LZ4_compressHC2(data.toKString(), dest, pixelDataSize, maxCompressionLevel) else LZ4_compress(
-                    data.toKString(),
-                    dest,
-                    pixelDataSize
-                )
+                if (hc) LZ4_compress_HC(data, dest, pixelDataSize, maxCompressedSize, maxCompressionLevel)
+                else LZ4_compress(data, dest, pixelDataSize)
 
             val saveStart = getTimeMillis()
             val f = fopen(to, "wb") // wb because windows would insert \n characters
-
-            println("Raw size: $pixelDataSize")
-            println("Raw toKString(): ${data.toKString().length}")
-            println("Dest size: $maxCompressedSize")
-            println("Compressed size: $compressedSize")
-
-            val written = fwrite(dest, 1, compressedSize.toULong(), f)
-            println("Written $written")
-
+            val header = createBFHeader(
+                this, BFImageHeader(
+                    BF_MAGIC,
+                    BF_VERSION,
+                    BF_FILE_IMAGE,
+                    BFImageHeaderFlags(
+                        combineFlags(
+                            BF_IMAGE_FLAG_LZ4,
+                            if (hc) BF_IMAGE_FLAG_LZ4_HC else 0,
+                            if (!switches.contains('v')) BF_IMAGE_FLAG_VERTICAL_FLIP else 0
+                        )
+                    ),
+                    createImageExtraHeader(bpp.value, 0),
+                    width.value.toShort(),
+                    height.value.toShort(),
+                    pixelDataSize
+                )
+            )
+            fwrite(header, 1, BF_HEADER_IMAGE_SIZE.toULong(), f)
+            fwrite(dest, 1, compressedSize.toULong(), f)
             fclose(f)
             stbi_image_free(pixelData)
-
-            println("imgconv lz4" + (if (hc) "hc " else " ") + (100*compressedSize.toFloat()/pixelDataSize) + "% " + width.value + "x" + height.value + " " + bpp.value + "bpp " + (compressStart - start) + "ms " + (saveStart - compressStart) + "ms " + (getTimeMillis() - saveStart) + "ms ")
+            println("imgconv lz4" + (if (hc) "hc " else " ") + (100 * compressedSize.toFloat() / pixelDataSize) + "% " + width.value + "x" + height.value + " " + bpp.value + "bpp " + (compressStart - start) + "ms " + (saveStart - compressStart) + "ms " + (getTimeMillis() - saveStart) + "ms ")
         } else {
             val saveStart = getTimeMillis()
             val f = fopen(to, "wb") // wb because windows would insert \n characters

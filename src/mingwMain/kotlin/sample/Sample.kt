@@ -1,9 +1,15 @@
 package sample
 
+import bfinfo.BF_HEADER_IMAGE_SIZE
+import bfinfo.readBFHeader
 import galogen.*
 import glfw.*
 import kotlinx.cinterop.*
+import lz4.LZ4_decompress_safe
 import platform.opengl32.GL_TEXTURE_MAX_ANISOTROPY_EXT
+import platform.posix.fclose
+import platform.posix.fopen
+import platform.posix.fwrite
 import kotlin.system.getTimeMillis
 
 @ExperimentalUnsignedTypes
@@ -39,6 +45,8 @@ fun main(args: Array<String>) {
         throw Exception("Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible.")
     }
 
+    println("Window created in ${getTimeMillis() - start} ms")
+
     glfwMakeContextCurrent(window)
 
     println("OpenGL Version: " + glGetString(GL_VERSION)?.reinterpret<ByteVar>()?.toKString())
@@ -46,49 +54,8 @@ fun main(args: Array<String>) {
     println("OpenGL Renderer: " + glGetString(GL_RENDERER)?.reinterpret<ByteVar>()?.toKString())
     println("GLSL Version: " + glGetString(GL_SHADING_LANGUAGE_VERSION)?.reinterpret<ByteVar>()?.toKString())
 
-    checkGLError()
+    glEnableDebug()
 
-    fun translateSource(source: Int): String {
-        return when (source) {
-            GL_DEBUG_SOURCE_API -> "API"
-            GL_DEBUG_SOURCE_WINDOW_SYSTEM -> "Window System"
-            GL_DEBUG_SOURCE_SHADER_COMPILER -> "Shader Compiler"
-            GL_DEBUG_SOURCE_THIRD_PARTY -> "Third-party"
-            GL_DEBUG_SOURCE_APPLICATION -> "Application"
-            GL_DEBUG_SOURCE_OTHER -> "Other"
-            else -> "Unknown"
-        }
-    }
-
-    fun translateType(type: Int): String {
-        return when (type) {
-            GL_DEBUG_TYPE_ERROR -> "Error"
-            GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR -> "Deprecated behavior"
-            GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR -> "Undefined behavior"
-            GL_DEBUG_TYPE_PORTABILITY -> "Portability"
-            GL_DEBUG_TYPE_PERFORMANCE -> "Performance"
-            GL_DEBUG_TYPE_OTHER -> "Other"
-            GL_DEBUG_TYPE_MARKER -> "Marker"
-            else -> "Unknown"
-        }
-    }
-
-    fun translateSeverity(severity: Int): String {
-        return when (severity) {
-            GL_DEBUG_SEVERITY_HIGH -> "High"
-            GL_DEBUG_SEVERITY_MEDIUM -> "Medium"
-            GL_DEBUG_SEVERITY_LOW -> "Low"
-            GL_DEBUG_SEVERITY_NOTIFICATION -> "Notification"
-            else -> "Unknown"
-        }
-    }
-
-    println("a")
-    glDebugMessageCallback(staticCFunction { source: GLenum, type: GLenum, id: GLuint, severity: GLenum, length: GLsizei, message: CPointer<ByteVar>?, _ ->
-        println("c")
-        println("[KHR] ${translateType(type.toInt())} (${translateSeverity(severity.toInt())}) ${translateSource(source.toInt())}/$id: ${message?.toKString()?.substring(0, length)}")
-    }, null)
-    println("b")
     glfwSwapInterval( 0 )
 
     // ---- buffers ----
@@ -203,16 +170,46 @@ fun main(args: Array<String>) {
         textureBuffers[0]
     }
 
-    val pixelData = readFileBinary("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\sprites\\kogin_logo.raw")
+    memScoped {
+        val (bfData, compressedSize) = readFileBinary("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\sprites\\kogin_logo.bf")
+        val header = readBFHeader(bfData.reinterpret())
 
-    glTextureStorage2D(textureId, 8, GL_RGB8, 512, 512)
-    glTextureSubImage2D(textureId, 0, 0,0, 512, 512, GL_RGB, GL_UNSIGNED_BYTE, pixelData)
-    glGenerateTextureMipmap(textureId)
-    glTextureParameteri(textureId, GL_TEXTURE_WRAP_S, GL_REPEAT)
-    glTextureParameteri(textureId, GL_TEXTURE_WRAP_T, GL_REPEAT)
-    glTextureParameteri(textureId, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glTextureParameteri(textureId, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-    glTextureParameterf(textureId, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16f)
+        println("bf magic: ${header.magic}")
+        println("bf version: ${header.version}")
+        println("bf file type: ${header.fileType}")
+        println("bf flags lz4: ${header.flags.lz4()}")
+        println("bf flags lz4hc: ${header.flags.lz4hc()}")
+        println("bf flags vflip: ${header.flags.verticallyFlipped()}")
+        println("bf flags dxt: ${header.flags.dxt()}")
+        println("bf has mipmaps: ${header.extra.hasMipmaps()}")
+        println("bf channels: ${header.extra.numberOfChannels()}")
+        println("bf width: ${header.width}")
+        println("bf height: ${header.height}")
+        println("bf uncompressed size: ${header.uncompressedSize}")
+
+        // move behind header
+        val data = (bfData.toLong()+ BF_HEADER_IMAGE_SIZE).toCPointer<ByteVar>()
+
+        val destSize = header.uncompressedSize
+        val pixelData = allocArray<ByteVar>(destSize)
+        val decompresed = LZ4_decompress_safe(data, pixelData, compressedSize - BF_HEADER_IMAGE_SIZE, destSize)
+        if(decompresed < -1) {
+            println("decompression failed!")
+            println("compressed resource size: $compressedSize")
+            println("dest capacity: $destSize")
+            println("decompressed bytes: $decompresed")
+        }
+
+        glTextureStorage2D(textureId, 8, GL_RGB8, header.width.toInt(), header.height.toInt())
+        glTextureSubImage2D(textureId, 0, 0,0, header.width.toInt(), header.height.toInt(), GL_RGB, GL_UNSIGNED_BYTE, pixelData)
+        glGenerateTextureMipmap(textureId)
+        glTextureParameteri(textureId, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTextureParameteri(textureId, GL_TEXTURE_WRAP_T, GL_REPEAT)
+        glTextureParameteri(textureId, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTextureParameteri(textureId, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
+        glTextureParameterf(textureId, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16f)
+
+    }
 
     glBindTextureUnit(0, textureId)
 
