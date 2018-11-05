@@ -34,6 +34,7 @@ class OpenGLLabel(private val openGLObjectType: Int) {
 
 }
 
+@ThreadLocal
 object OpenGLObjectFactory {
     private val texture2d = TypedBufferedOpenGLObjectConstructor(::glCreateTextures, GL_TEXTURE_2D)
     private val bufferObjects = SimpleBufferedOpenGLObjectConstructor(::glCreateBuffers)
@@ -53,7 +54,7 @@ open class SimpleBufferedOpenGLObjectConstructor(
     @Mallocated protected val pool: CArrayPointer<UIntVar> = nativeHeap.allocArray(batchSize)
 ) : Disposable {
 
-    protected var idx = 0
+    protected var idx = batchSize - 1
 
     fun take(): UInt {
         if (idx == batchSize - 1) {
@@ -112,19 +113,19 @@ class Texture(override val id: UInt = OpenGLObjectFactory.newTexture2D()) : Labe
         }
     }
 
-    fun createStorage(mipmapLevels: Int, internalFormat: GLenum, width: Int, height: Int) {
-        glTextureStorage2D(id, mipmapLevels, internalFormat, width, height)
+    fun createStorage(mipmapLevels: Int, internalFormat: Int, width: Int, height: Int) {
+        glTextureStorage2D(id, mipmapLevels, internalFormat.toUInt(), width, height)
     }
 
     fun uploadMipmap(
         mipmapLevel: Int,
         width: Int,
         height: Int,
-        format: GLenum,
-        type: GLenum,
+        format: Int,
+        type: Int,
         pixelData: CValuesRef<*>
     ) {
-        glTextureSubImage2D(id, mipmapLevel, 0, 0, width, height, format, type, pixelData)
+        glTextureSubImage2D(id, mipmapLevel, 0, 0, width, height, format.toUInt(), type.toUInt(), pixelData)
     }
 
     fun generateOtherMipmaps() {
@@ -174,6 +175,28 @@ class BufferObject(override val id: UInt = OpenGLObjectFactory.newBufferObject()
     override fun free() {
         memScoped {
             glDeleteBuffers(1, cValuesOf(id))
+        }
+    }
+
+    companion object {
+        fun createArrayBuffer(flags: Int, data: CValues<*>?): BufferObject =
+            createArrayBuffer(data?.size?.toLong() ?: 0, flags, data)
+
+        fun createArrayBuffer(size: Long, flags: Int, data: CValuesRef<*>?): BufferObject {
+            val bo = BufferObject()
+            bo.bindAsArrayBuffer()
+            bo.createStorage(size, flags.toUInt(), data)
+            return bo
+        }
+
+        fun createIndexBuffer(flags: Int, data: CValues<*>?): BufferObject =
+            createIndexBuffer(data?.size?.toLong() ?: 0, flags, data)
+
+        fun createIndexBuffer(size: Long, flags: Int, data: CValuesRef<*>?): BufferObject {
+            val bo = BufferObject()
+            bo.bindAsIndexBuffer()
+            bo.createStorage(size, flags.toUInt(), data)
+            return bo
         }
     }
 }
@@ -247,9 +270,13 @@ class Program(override val id: UInt = glCreateProgram()) : Labelled, Disposable 
         if (Program.checkLinkageStatus) {
             memScoped {
                 val isLinked = alloc<GLintVar>()
-                glGetProgramiv(id, GL_COMPILE_STATUS, isLinked.ptr)
+                glGetProgramiv(id, GL_LINK_STATUS, isLinked.ptr)
                 if (isLinked.value == GL_FALSE) {
-                    throw RuntimeException("Program was not linked!")
+                    val log = allocArray<ByteVar>(1024)
+                    val length = alloc<IntVar>()
+                    glGetProgramInfoLog(id, 1024, length.ptr, log)
+
+                    throw RuntimeException("Program was not linked! ${log.toKString().substring(length.value)}")
                 }
             }
         }
@@ -312,6 +339,46 @@ class VertexSpecification {
     }
 }
 
+class VAOFactory {
+
+    private data class SrcMapping(
+        val name: Int,
+        val fromBuffer: CArrayPointer<*>,
+        val offset: Long,
+        val size: Long,
+        val stride: Long,
+        val count: Long
+    )
+
+    private data class DestMapping(val name: Int, val padding: Int = 0)
+
+    private var interleaved = false
+    private val srcMappings = mutableListOf<SrcMapping>()
+    private val destMappings = mutableListOf<DestMapping>()
+
+
+    fun src(name: Int, fromBuffer: CArrayPointer<*>, offset: Long, size: Long, stride: Long, count: Long) {
+        srcMappings.add(SrcMapping(name, fromBuffer, offset, size, stride, count))
+    }
+
+    fun destInterleaved() {
+        interleaved = true
+    }
+
+    fun dest(name: Int, padding: Int = 0) {
+        destMappings.add(DestMapping(name, padding))
+    }
+
+    fun build() {
+
+    }
+}
+
+val positions: CArrayPointer<FloatVar>? = null
+
+//val cubeVao = VAOFactory()
+//    .src(0, positions, 0, Long.BYTES, Long.BYTES, 12)
+
 val DEFAULT_VERTEX_SPEC = VertexSpecification()
     .interleaved()
     .float("position", 3)
@@ -330,8 +397,24 @@ class VAO(override val id: UInt = OpenGLObjectFactory.newVAO()) : Labelled, Disp
         glBindVertexArray(id)
     }
 
-    fun m1(index: UInt) {
-        glEnableVertexArrayAttrib(id, index)
+    fun enableAttribute(index: Int) {
+        glEnableVertexArrayAttrib(id, index.toUInt())
+    }
+
+    fun defineBinding(bindingIndex: Int, bufferObject: BufferObject, offset: Long, stride: Int) {
+        glVertexArrayVertexBuffer(id, bindingIndex.toUInt(), bufferObject.id, offset, stride)
+    }
+
+    fun defineAttribute(attributeIndex: Int, size: Int, type: Int, normalize: Int = GL_FALSE, relativeOffset: UInt = 0u) {
+        glVertexArrayAttribFormat(id, attributeIndex.toUInt(), size, type.toUInt(), normalize.toUByte(), relativeOffset)
+    }
+
+    fun useBindingAsAttribute(attributeIndex: Int, bindingIndex: Int) {
+        glVertexArrayAttribBinding(id, attributeIndex.toUInt(), bindingIndex.toUInt())
+    }
+
+    fun elementBuffer(indexBuffer: BufferObject) {
+        glVertexArrayElementBuffer(id, indexBuffer.id)
     }
 
     override fun free() {

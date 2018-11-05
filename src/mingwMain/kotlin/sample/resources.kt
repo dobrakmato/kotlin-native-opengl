@@ -135,13 +135,13 @@ object TextureLoader : SpecializedResourceLoader<Texture> {
         texture.label = "Texture for ${resource.file}"
 
         texture.createStorage(
-            header.extra.includedMipmaps(), header.glInternalFormat.toUInt(),
+            header.extra.includedMipmaps(), header.glInternalFormat,
             header.width.toInt(), header.height.toInt()
         )
 
         texture.uploadMipmap(
             0, header.width.toInt(), header.height.toInt(),
-            header.glFormat.toUInt(), header.glType.toUInt(), realDataPointer
+            header.glFormat, header.glType, realDataPointer
         )
 
         /* Upload additional mipmaps. */

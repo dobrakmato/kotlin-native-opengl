@@ -3,6 +3,8 @@ package sample
 import galogen.*
 import kotlinx.cinterop.*
 
+class KHRStackTrace : RuntimeException()
+
 fun translateSource(source: Int): String {
     return when (source) {
         GL_DEBUG_SOURCE_API -> "API"
@@ -51,6 +53,9 @@ private fun debugCallback(
         "[KHR_debug] ${translateType(type.toInt())} (${translateSeverity(severity.toInt())}) " +
                 "${translateSource(source.toInt())}/$id: ${message?.toKString()?.substring(0, length)}"
     )
+    if (severity.toInt() == GL_DEBUG_SEVERITY_HIGH) {
+        KHRStackTrace().printStackTrace()
+    }
 }
 
 fun glEnableDebug(synchronous: Boolean = true) {
