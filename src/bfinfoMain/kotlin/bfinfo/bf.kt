@@ -28,7 +28,7 @@ const val BF_IMAGE_FLAG_VERTICAL_FLIP = 32
 const val BF_IMAGE_FLAG_GAMMA_SRGB = 64
 const val BF_IMAGE_FLAG_SKYBOX = 128
 
-data class BFImageHeader (
+data class BFImageHeader(
     val magic: Int = BF_MAGIC,
 
     val version: Byte,
@@ -62,7 +62,7 @@ inline class BFImageHeaderExtra(val value: Byte) {
 fun createImageExtraHeader(numberOfChannels: Int, includedMipmaps: Int): BFImageHeaderExtra {
     var result: Int = 0
 
-    result = result or (numberOfChannels and 0b00000)
+    result = result or (numberOfChannels and 0b00000111)
     if (includedMipmaps > 0) {
         result = result or (0b00001000)
         result = result or ((0b00001111 and includedMipmaps) shr 4)

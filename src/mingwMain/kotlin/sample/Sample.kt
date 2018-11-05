@@ -7,12 +7,13 @@ import glfw.*
 import kotlinx.cinterop.*
 import lz4.LZ4_decompress_safe
 import platform.opengl32.GL_TEXTURE_MAX_ANISOTROPY_EXT
+import kotlin.math.round
 import kotlin.system.getTimeMillis
 
 @ExperimentalUnsignedTypes
 fun checkGLError() {
     val error = glGetError().toInt()
-    if( error != GL_NO_ERROR) {
+    if (error != GL_NO_ERROR) {
         throw Exception("Gl error! $error")
     }
 }
@@ -54,15 +55,19 @@ fun main(args: Array<String>) {
 
     glEnableDebug()
 
-    glfwSwapInterval( 0 )
+    glfwSwapInterval(0)
 
     // ---- buffers ----
 
-    val vbo = BufferObject.createArrayBuffer(GL_MAP_READ_BIT,
-        cValuesOf(-1f, -1f, 0f,
-        1f, -1f, 0f,
-        1f, 1f, 0f,
-        -1f, 1f, 0f))
+    val vbo = BufferObject.createArrayBuffer(
+        GL_MAP_READ_BIT,
+        cValuesOf(
+            -1f, -1f, 0f,
+            1f, -1f, 0f,
+            1f, 1f, 0f,
+            -1f, 1f, 0f
+        )
+    )
 
     val ibo = BufferObject.createIndexBuffer(GL_MAP_READ_BIT, cValuesOf(3.toByte(), 0, 1, 2, 3, 1))
 
@@ -104,88 +109,60 @@ fun main(args: Array<String>) {
 
     // ---- texture ----
 
-    val texture = Texture()
-
-
-
-    memScoped {
-        val (bfData, compressedSize) = readFileBinary("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\sprites\\kogin_logo.bf")
-        val header = readBFHeader(bfData.reinterpret())
-
-        println("bf magic: ${header.magic}")
-        println("bf version: ${header.version}")
-        println("bf file type: ${header.fileType}")
-        println("bf flags lz4: ${header.flags.lz4()}")
-        println("bf flags lz4hc: ${header.flags.lz4hc()}")
-        println("bf flags vflip: ${header.flags.verticallyFlipped()}")
-        println("bf flags dxt: ${header.flags.dxt()}")
-        println("bf has mipmaps: ${header.extra.hasMipmaps()}")
-        println("bf channels: ${header.extra.numberOfChannels()}")
-        println("bf width: ${header.width}")
-        println("bf height: ${header.height}")
-        println("bf uncompressed size: ${header.uncompressedSize}")
-
-        // move behind header
-        val data = (bfData.toLong()+ BF_HEADER_IMAGE_SIZE).toCPointer<ByteVar>()
-
-        val destSize = header.uncompressedSize
-        val pixelData = allocArray<ByteVar>(destSize)
-        val decompresed = LZ4_decompress_safe(data, pixelData, compressedSize - BF_HEADER_IMAGE_SIZE, destSize)
-        if(decompresed < -1) {
-            println("decompression failed!")
-            println("compressed resource size: $compressedSize")
-            println("dest capacity: $destSize")
-            println("decompressed bytes: $decompresed")
-        }
-
-        val width =header.width.toInt()
-        val height = header.height.toInt()
-
-        texture.createStorage(8, GL_RGB8, width, height)
-        texture.uploadMipmap(0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixelData)
-        texture.generateOtherMipmaps()
-        texture.setWraps(TextureWrapMode.REPEAT, TextureWrapMode.REPEAT)
-        texture.setFilters(TextureFilter.LINEAR_MIPMAP_LINEAR, TextureFilter.LINEAR)
-        texture.setAnisotropicFiltering(16f)
-    }
+    val texture =
+        AssetLoader.getAsset<Texture>("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\sprites\\kogin_logo.bf")
 
     texture.bindTo(0)
-
-    // nativeHeap.free(pixelData)
 
     println("textures ready")
 
     // ---- render loop ----
 
-    glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_OTHER, 0, GL_DEBUG_SEVERITY_NOTIFICATION, 15, "testing message")
+    glDebugMessageInsert(
+        GL_DEBUG_SOURCE_APPLICATION,
+        GL_DEBUG_TYPE_OTHER,
+        0,
+        GL_DEBUG_SEVERITY_NOTIFICATION,
+        15,
+        "testing message"
+    )
 
     println("debug msg inserted")
 
-    glClearColor(0f,0f,0f,1f)
+    glClearColor(0f, 0f, 0f, 1f)
 
     println("Started application in ${getTimeMillis() - start} ms.")
 
+    val frameTime = Query(QueryType.TIME_ELAPSED)
+
     val f = GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT
+    var gpuTime = 0.0
     var lastTime = 0.0
     var frames: Long = 0
     do {
+        gpuTime += (frameTime.getResult().toInt() / 1000000f)
+        frameTime.begin()
         glClear(f.toUInt())
+
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, null)
 
+
         glfwSwapBuffers(window)
+        frameTime.end()
         glfwPollEvents()
         frames++
 
         val time = glfwGetTime()
         if (lastTime + 1 < time) {
-            glfwSetWindowTitle(window, "FPS: $frames")
+            glfwSetWindowTitle(window, "FPS: $frames (" + round(1000 * gpuTime / frames) / 1000f + "ms)")
             lastTime = time
+            gpuTime = 0.0
             frames = 0
         }
 
         val error = glGetError().toInt()
-        if(error != GL_NO_ERROR) {
+        if (error != GL_NO_ERROR) {
             throw Exception("Gl error! $error")
         }
     } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS)

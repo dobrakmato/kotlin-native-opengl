@@ -3,7 +3,19 @@ package sample
 import kotlinx.cinterop.*
 import platform.posix.*
 
-typealias FileData = CArrayPointer<UByteVar>
+inline class Path(private val path: String) {
+    fun isAbsolute() = false
+    fun basename() = platform.posix.basename(path.cstr)?.toKString()
+    fun exists() = platform.posix.stat(path, null) == 0
+    fun dirname() = platform.posix.dirname(path.cstr)?.toKString()
+}
+
+@Target(AnnotationTarget.TYPE, AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.PROPERTY)
+@MustBeDocumented
+annotation class Mallocated
+
+
+typealias FileData = @Mallocated CArrayPointer<UByteVar>
 
 fun readFileText(path: String): String {
     return memScoped {
@@ -20,7 +32,7 @@ fun readFileText(path: String): String {
 }
 
 
-fun readFileBinary(path: String): Pair<@Mallocated FileData, Int> {
+fun readFileBinary(path: String): Pair<FileData, Int> {
     val f = fopen(path, "rb") ?: throw Exception("Cannot open file $path because: ${posix_errno()}")
 
     fseek(f, 0, SEEK_END)

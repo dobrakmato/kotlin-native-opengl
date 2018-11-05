@@ -9,10 +9,6 @@ import lz4.LZ4_decompress_safe
 import platform.opengl32.GL_R
 import kotlin.system.getTimeMillis
 
-@Target(AnnotationTarget.TYPE, AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.PROPERTY)
-@MustBeDocumented
-annotation class Mallocated
-
 interface SpecializedResourceLoader<T> {
     fun loadTo(resource: Resource<T>, data: FileData, dataLength: Int)
 }
@@ -30,7 +26,6 @@ object ResourceLoader {
 
         // delegate to specific loader
         when (fileType.toInt()) {
-            1 -> TextureLoader.loadTo(resource as Resource<Texture>, data, length)
             2 -> MeshLoader.loadTo(resource as Resource<Mesh>, data, length)
         }
 
@@ -82,108 +77,6 @@ data class ResourceTiming(
     var asyncUploadTime: Long = 0
 )
 
-val BFImageHeader.glInternalFormat: Int
-    get() {
-        if (flags.srgb()) {
-            return when (extra.numberOfChannels()) {
-                3 -> GL_SRGB8
-                4 -> GL_SRGB8_ALPHA8
-                else -> throw Exception("Invalid number of channels for SRGB!")
-            }
-        }
-
-        // todo: support more texture formats
-
-        return when (extra.numberOfChannels()) {
-            1 -> GL_R8
-            2 -> GL_RG8
-            3 -> GL_RGB8
-            4 -> GL_RGBA8
-            else -> throw Exception("Invalid number of channels! Or not implemented yet.")
-        }
-    }
-
-val BFImageHeader.glFormat: Int
-    get() {
-        return when (extra.numberOfChannels()) {
-            1 -> GL_R
-            2 -> GL_RG
-            3 -> GL_RGB
-            4 -> GL_RGBA
-            else -> throw Exception("Invalid number of channels!")
-        }
-    }
-
-val BFImageHeader.glType: Int
-    get() {
-        return if (flags.float()) {
-            GL_FLOAT
-        } else {
-            GL_UNSIGNED_BYTE
-        }
-    }
-
-object TextureLoader : SpecializedResourceLoader<Texture> {
-    override fun loadTo(resource: Resource<Texture>, data: @Mallocated FileData, dataLength: Int) {
-        val header = readBFHeader(data.reinterpret())
-        val dataPointer = skipHeader(data)
-
-        /* Either the memory is released and new buffer is created in decompressIfNeeded() or old pointer is returned. */
-        val realDataPointer = decompressIfNeeded(header, dataPointer, sizeWithoutHeader(dataLength))
-
-        val texture = Texture()
-        texture.label = "Texture for ${resource.file}"
-
-        texture.createStorage(
-            header.extra.includedMipmaps(), header.glInternalFormat,
-            header.width.toInt(), header.height.toInt()
-        )
-
-        texture.uploadMipmap(
-            0, header.width.toInt(), header.height.toInt(),
-            header.glFormat, header.glType, realDataPointer
-        )
-
-        /* Upload additional mipmaps. */
-        texture.generateOtherMipmaps()
-
-        texture.setFilters(TextureFilter.LINEAR, TextureFilter.LINEAR)
-        texture.setWraps(TextureWrapMode.REPEAT, TextureWrapMode.REPEAT)
-        texture.setAnisotropicFiltering(Texture.defaultAnisotropyLevel)
-
-        resource.resource = texture
-
-        nativeHeap.free(realDataPointer)
-    }
-
-    private fun decompressIfNeeded(
-        header: BFImageHeader,
-        @Mallocated dataPointer: CArrayPointer<UByteVar>,
-        sizeWithoutHeader: Int
-    ): @Mallocated CArrayPointer<UByteVar> {
-        if (header.flags.lz4()) {
-            val decompressed = nativeHeap.allocArray<UByteVar>(header.uncompressedSize)
-            LZ4_decompress_safe(
-                dataPointer.reinterpret(),
-                decompressed.reinterpret(),
-                sizeWithoutHeader,
-                header.uncompressedSize
-            )
-            nativeHeap.free(dataPointer)
-            return decompressed
-        }
-        return dataPointer
-    }
-
-    private fun sizeWithoutHeader(size: Int): Int {
-        return size - BF_HEADER_IMAGE_SIZE
-    }
-
-    private fun skipHeader(contents: CPointer<UByteVar>): CPointer<UByteVar> {
-        return ((contents.toLong() + BF_HEADER_IMAGE_SIZE).toCPointer())
-            ?: throw RuntimeException("Null pointer exception")
-    }
-}
 
 object MeshLoader : SpecializedResourceLoader<Mesh> {
     override fun loadTo(resource: Resource<Mesh>, data: FileData, dataLength: Int) {

@@ -29,7 +29,7 @@ class OpenGLLabel(private val openGLObjectType: Int) {
 
     operator fun setValue(labelled: Labelled, property: KProperty<*>, s: String?) {
         value = s
-        glObjectLabel(labelled.id.toUInt(), openGLObjectType.toUInt(), s?.length ?: 0, s)
+        glObjectLabel(openGLObjectType.toUInt(), labelled.id.toUInt(), s?.length ?: 0, s)
     }
 
 }
@@ -40,9 +40,17 @@ object OpenGLObjectFactory {
     private val bufferObjects = SimpleBufferedOpenGLObjectConstructor(::glCreateBuffers)
     private val vao = SimpleBufferedOpenGLObjectConstructor(::glCreateVertexArrays)
 
+    private val timestampQueries = TypedBufferedOpenGLObjectConstructor(::glCreateQueries, GL_TIMESTAMP)
+    private val timeElapsedQueries = TypedBufferedOpenGLObjectConstructor(::glCreateQueries, GL_TIME_ELAPSED)
+
     fun newTexture2D(): UInt = texture2d.take()
     fun newBufferObject(): UInt = bufferObjects.take()
     fun newVAO(): UInt = vao.take()
+    fun newQuery(type: QueryType): UInt = when (type) {
+        QueryType.TIMESTAMP -> timestampQueries.take()
+        QueryType.TIME_ELAPSED -> timeElapsedQueries.take()
+        else -> throw RuntimeException("Other query types not yet implemented!")
+    }
 }
 
 typealias SimpleOpenGLCreateFunction = KFunction2<GLsizei, CValuesRef<GLuintVar>?, Unit>
@@ -147,7 +155,7 @@ class Texture(override val id: UInt = OpenGLObjectFactory.newTexture2D()) : Labe
     }
 
     companion object {
-        var defaultAnisotropyLevel = 0f
+        var defaultAnisotropyLevel = 16f
     }
 }
 
@@ -200,6 +208,63 @@ class BufferObject(override val id: UInt = OpenGLObjectFactory.newBufferObject()
         }
     }
 }
+
+/* Query objects */
+
+enum class QueryType(val glType: Int) {
+    TIMESTAMP(GL_TIMESTAMP),
+    TIME_ELAPSED(GL_TIME_ELAPSED)
+}
+
+class Query(private val type: QueryType, override val id: UInt = OpenGLObjectFactory.newQuery(type)) : Labelled,
+    Disposable {
+    override var label: String? by OpenGLLabel(GL_QUERY)
+
+    fun begin() {
+        glBeginQuery(type.glType.toUInt(), id)
+    }
+
+    fun end() {
+        glEndQuery(type.glType.toUInt())
+    }
+
+    fun isResultReady(): Boolean {
+        return memScoped {
+            val done = alloc<IntVar>()
+            glGetQueryObjectiv(id, GL_QUERY_RESULT_AVAILABLE, done.ptr)
+            return done.value == GL_TRUE
+        }
+    }
+
+    fun busyWaitResult(): ULong {
+        return memScoped {
+            val done = alloc<IntVar>()
+            val longVar = alloc<ULongVar>()
+            glGetQueryObjectiv(id, GL_QUERY_RESULT_AVAILABLE, done.ptr)
+            while (done.value == GL_FALSE) {
+                glGetQueryObjectiv(id, GL_QUERY_RESULT_AVAILABLE, done.ptr)
+            }
+
+            glGetQueryObjectui64v(id, GL_QUERY_RESULT, longVar.ptr)
+            return longVar.value
+        }
+    }
+
+    fun getResult(): ULong {
+        return memScoped {
+            val longVar = alloc<ULongVar>()
+            glGetQueryObjectui64v(id, GL_QUERY_RESULT, longVar.ptr)
+            return longVar.value
+        }
+    }
+
+    override fun free() {
+        memScoped {
+            glDeleteQueries(1, cValuesOf(id))
+        }
+    }
+}
+
 
 /* Shader object */
 
@@ -405,7 +470,13 @@ class VAO(override val id: UInt = OpenGLObjectFactory.newVAO()) : Labelled, Disp
         glVertexArrayVertexBuffer(id, bindingIndex.toUInt(), bufferObject.id, offset, stride)
     }
 
-    fun defineAttribute(attributeIndex: Int, size: Int, type: Int, normalize: Int = GL_FALSE, relativeOffset: UInt = 0u) {
+    fun defineAttribute(
+        attributeIndex: Int,
+        size: Int,
+        type: Int,
+        normalize: Int = GL_FALSE,
+        relativeOffset: UInt = 0u
+    ) {
         glVertexArrayAttribFormat(id, attributeIndex.toUInt(), size, type.toUInt(), normalize.toUByte(), relativeOffset)
     }
 

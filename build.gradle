@@ -105,3 +105,15 @@ task runProgram {
         }
     }
 }
+
+task debugProgram {
+    def buildType = 'debug' // Change to 'debug' to run application with debug symbols.
+    dependsOn "link${buildType.capitalize()}ExecutableMingw"
+    doLast {
+        def programFile = kotlin.targets.mingw.compilations.main.getBinary('EXECUTABLE', buildType)
+        exec {
+            executable 'C:\\cygwin64\\bin\\gdb.exe'
+            args programFile
+        }
+    }
+}
