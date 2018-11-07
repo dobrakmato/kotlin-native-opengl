@@ -1,12 +1,8 @@
 package sample
 
-import bfinfo.BF_HEADER_IMAGE_SIZE
-import bfinfo.readBFHeader
 import galogen.*
 import glfw.*
 import kotlinx.cinterop.*
-import lz4.LZ4_decompress_safe
-import platform.opengl32.GL_TEXTURE_MAX_ANISOTROPY_EXT
 import kotlin.math.round
 import kotlin.system.getTimeMillis
 
@@ -71,8 +67,6 @@ fun main(args: Array<String>) {
 
     val ibo = BufferObject.createIndexBuffer(GL_MAP_READ_BIT, cValuesOf(3.toByte(), 0, 1, 2, 3, 1))
 
-    println("buffers ready")
-
     // ---- shaders ----
 
     val vertex = Shader(ShaderType.VERTEX)
@@ -88,11 +82,7 @@ fun main(args: Array<String>) {
     program.attachShader(fragment)
     program.link()
 
-    println("shaders ready")
-
     // ---- vao ----
-
-    println("vao")
 
     val vao = VAO()
     vao.enableAttribute(0)
@@ -101,37 +91,23 @@ fun main(args: Array<String>) {
     vao.useBindingAsAttribute(0, 0)
     vao.elementBuffer(ibo)
 
-    vao.bind()
-    program.use()
-
-    println("vao ready")
-
-
     // ---- texture ----
 
-    val texture =
-        AssetLoader.getAsset<Texture>("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\sprites\\kogin_logo.bf")
-
-    texture.bindTo(0)
+    val texture = AssetLoader
+        .getAsset<Texture>("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\sprites\\TexturesCom_Pavement_Tactile_1K_albedo.bf")
 
     println("textures ready")
 
     // ---- render loop ----
 
-    glDebugMessageInsert(
-        GL_DEBUG_SOURCE_APPLICATION,
-        GL_DEBUG_TYPE_OTHER,
-        0,
-        GL_DEBUG_SEVERITY_NOTIFICATION,
-        15,
-        "testing message"
-    )
-
-    println("debug msg inserted")
-
+    glDebugMessage("Entering render loop")
     glClearColor(0f, 0f, 0f, 1f)
 
     println("Started application in ${getTimeMillis() - start} ms.")
+
+    vao.bind()
+    program.use()
+    texture.bindTo(0)
 
     val frameTime = Query(QueryType.TIME_ELAPSED)
 

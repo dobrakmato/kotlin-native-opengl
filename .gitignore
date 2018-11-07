@@ -191,3 +191,4 @@ gradle-app.setting
 
 # cinterop workaround
 src/nativeInterop/cinterop/*.def
+src/mingwMain/resources/tools

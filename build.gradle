@@ -21,12 +21,6 @@ kotlin {
 
             compilations.main {
                 cinterops {
-                    lz4 {
-                    }
-                    glfw {
-                    }
-                    galogen {
-                    }
                 }
             }
         }

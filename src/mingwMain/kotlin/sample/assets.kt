@@ -7,6 +7,8 @@ import bfinfo.readBFHeader
 import galogen.*
 import kotlinx.cinterop.*
 import lz4.LZ4_decompress_safe
+import platform.opengl32.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+import platform.opengl32.GL_COMPRESSED_RGB_S3TC_DXT1_EXT
 import platform.opengl32.GL_R
 
 /* generic asset loading */
@@ -79,6 +81,19 @@ object BFTextureLoader : SpecializedAssetLoader<Texture> {
             }
         }
 
+    private val BFImageHeader.glCompressedFormat: Int
+        get() {
+            if (!flags.dxt()) {
+                throw RuntimeException("Accessing compressed format of uncompressed texture!")
+            }
+
+            return when (extra.numberOfChannels()) {
+                3 -> GL_COMPRESSED_RGB_S3TC_DXT1_EXT
+                4 -> GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+                else -> throw Exception("Invalid number of channels! Or not implemented yet.")
+            }
+        }
+
     private val BFImageHeader.glFormat: Int
         get() {
             return when (extra.numberOfChannels()) {
@@ -122,15 +137,23 @@ object BFTextureLoader : SpecializedAssetLoader<Texture> {
         val texture = Texture()
         texture.label = "Texture for ${asset.path}"
 
-        texture.createStorage(
-            header.extra.includedMipmaps(), header.glInternalFormat,
-            header.width.toInt(), header.height.toInt()
-        )
-
-        texture.uploadMipmap(
-            0, header.width.toInt(), header.height.toInt(),
-            header.glFormat, header.glType, realDataPointer
-        )
+        if (header.flags.dxt()) {
+            val w = header.width.toInt()
+            val h = header.height.toInt()
+            val c = header.extra.numberOfChannels()
+            val size = if (c == 3) (w * h * 3) / 6 else (w * h * 4) / 4
+            texture.createStorage(header.extra.includedMipmaps(), header.glCompressedFormat, w, h)
+            texture.uploadCompressedMipmap(0, w, h, header.glCompressedFormat, size, realDataPointer)
+        } else {
+            texture.createStorage(
+                header.extra.includedMipmaps(), header.glInternalFormat,
+                header.width.toInt(), header.height.toInt()
+            )
+            texture.uploadMipmap(
+                0, header.width.toInt(), header.height.toInt(),
+                header.glFormat, header.glType, realDataPointer
+            )
+        }
 
         /* Upload additional mipmaps. */
         texture.generateOtherMipmaps()

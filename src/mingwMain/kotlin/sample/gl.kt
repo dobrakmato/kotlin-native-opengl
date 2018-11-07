@@ -136,6 +136,27 @@ class Texture(override val id: UInt = OpenGLObjectFactory.newTexture2D()) : Labe
         glTextureSubImage2D(id, mipmapLevel, 0, 0, width, height, format.toUInt(), type.toUInt(), pixelData)
     }
 
+    fun uploadCompressedMipmap(
+        mipmapLevel: Int,
+        width: Int,
+        height: Int,
+        compressedFormat: Int,
+        imageSize: Int,
+        compressedPixelData: CValuesRef<*>
+    ) {
+        glCompressedTextureSubImage2D(
+            id,
+            mipmapLevel,
+            0,
+            0,
+            width,
+            height,
+            compressedFormat.toUInt(),
+            imageSize,
+            compressedPixelData
+        )
+    }
+
     fun generateOtherMipmaps() {
         glGenerateTextureMipmap(id)
     }
@@ -360,26 +381,27 @@ class Program(override val id: UInt = glCreateProgram()) : Labelled, Disposable 
 
     fun setUniform(name: String, value: Float) {
         ensureUniformLocationExists(name)
-        glUniform1f(uniformLocations[name]!!, value)
+        glProgramUniform1f(id, uniformLocations[name]!!, value)
     }
 
     fun setUniform(name: String, value: Int) {
         ensureUniformLocationExists(name)
-        glUniform1i(uniformLocations[name]!!, value)
+        glProgramUniform1i(id, uniformLocations[name]!!, value)
     }
 
     fun setUniform(name: String, value: UInt) {
         ensureUniformLocationExists(name)
-        glUniform1ui(uniformLocations[name]!!, value)
+        glProgramUniform1ui(id, uniformLocations[name]!!, value)
     }
 
     fun setUniform(name: String, f0: Float, f1: Float, f2: Float) {
         ensureUniformLocationExists(name)
-        glUniform3f(uniformLocations[name]!!, f0, f1, f2)
+        glProgramUniform3f(id, uniformLocations[name]!!, f0, f1, f2)
     }
 
     fun setUniformBlock() {
         //todo: research
+        // https://www.khronos.org/opengl/wiki/Uniform_Buffer_Object
     }
 
     override fun free() {
