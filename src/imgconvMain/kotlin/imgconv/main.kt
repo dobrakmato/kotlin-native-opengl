@@ -28,7 +28,38 @@ interface Step {
     operator fun invoke(input: Pair<BFImageHeader, CArrayPointer<UByteVar>>?): Pair<BFImageHeader, CArrayPointer<UByteVar>>
 }
 
-class LoadImageStep: Step {
+interface S<I, O> {
+    val name: String
+    operator fun invoke(input: I): O
+}
+
+class Load : S<String, Pair<BFImageHeader, CPointer<UByteVar>>> {
+    override val name = "load"
+    override fun invoke(input: String): Pair<BFImageHeader, CPointer<UByteVar>> {
+        val width = nativeHeap.alloc<IntVar>()
+        val height = nativeHeap.alloc<IntVar>()
+        val bpp = nativeHeap.alloc<IntVar>()
+        val desiredChannels = 3
+
+        val pixelData = stbi_load(input, width.ptr, height.ptr, bpp.ptr, desiredChannels)
+        val pixelDataSize = (width.value * height.value * desiredChannels)
+
+        val header = BFImageHeader(
+            BF_MAGIC,
+            BF_VERSION,
+            BF_FILE_IMAGE,
+            BFImageHeaderFlags(0),
+            BFImageHeaderExtra(0),
+            width.value.toShort(),
+            height.value.toShort(),
+            pixelDataSize
+        )
+
+        return Pair(header, pixelData!!)
+    }
+}
+
+class LoadImageStep : Step {
     override val name = "load"
     override fun invoke(input: Pair<BFImageHeader, CArrayPointer<UByteVar>>?): Pair<BFImageHeader, CArrayPointer<UByteVar>> {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
