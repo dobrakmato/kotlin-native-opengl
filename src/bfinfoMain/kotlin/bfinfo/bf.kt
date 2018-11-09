@@ -129,6 +129,7 @@ class ByteBuffer(private val ptr: CArrayPointer<ByteVar>) {
     private var index: Int = 0
 
     fun readByte(): Byte = ptr[index++].toByte()
+    private fun readUByte(): UByte = ptr[index++].toUByte()
 
     fun writeByte(value: Byte) {
         ptr[index++] = value
@@ -151,15 +152,15 @@ class ByteBuffer(private val ptr: CArrayPointer<ByteVar>) {
     }
 
     fun readInt(): Int {
-        val a = readByte()
-        val b = readByte()
-        val c = readByte()
-        val d = readByte()
+        val a = readUByte()
+        val b = readUByte()
+        val c = readUByte()
+        val d = readUByte()
 
-        return a.toInt() or
-                (b.toInt() shl 8) or
-                (c.toInt() shl 16) or
-                (d.toInt() shl 24)
+        return (a.toUInt() or
+                (b.toUInt() shl 8) or
+                (c.toUInt() shl 16) or
+                (d.toUInt() shl 24)).toInt()
     }
 
     fun writeInt(value: Int) {
