@@ -13,6 +13,7 @@ kotlin {
         // For MacOS, preset should be changed to e.g. presets.macosX64
         fromPreset(presets.mingwX64, 'mingw')
         fromPreset(presets.mingwX64, 'imgconv')
+        fromPreset(presets.mingwX64, 'geoconv')
         fromPreset(presets.mingwX64, 'bfinfo')
 
         configure([bfinfo]) {
@@ -33,6 +34,18 @@ kotlin {
                 cinterops {
                     stb {
                     }
+                    lz4 {
+                    }
+                }
+            }
+        }
+
+        configure([imgconv]) {
+            compilations.main.outputKinds('EXECUTABLE')
+            compilations.main.entryPoint = 'geoconv.main'
+
+            compilations.main {
+                cinterops {
                     lz4 {
                     }
                 }
@@ -63,6 +76,9 @@ kotlin {
         imgconvMain {
             dependsOn bfinfoMain
         }
+        geoconvMain {
+            dependsOn bfinfoMain
+        }
         mingwMain {
             dependsOn bfinfoMain
         }
@@ -73,6 +89,10 @@ kotlin {
 
 kotlin.sourceSets.all {
     languageSettings {
+        languageVersion = '1.3'
+        apiVersion = '1.3'
+        //enableLanguageFeature('InlineClasses') // language feature name
+        useExperimentalAnnotation('kotlin.ExperimentalUnsignedTypes') // annotation FQ-name
         progressiveMode = true
     }
 }

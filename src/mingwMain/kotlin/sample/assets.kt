@@ -33,7 +33,6 @@ object AssetLoader {
             throw Exception("Not a BF file!")
         }
 
-        val version = data[4]
         val fileType = data[5]
 
         // delegate to specific loader
@@ -60,6 +59,8 @@ interface SpecializedAssetLoader<T> {
 /* texture specialized loading */
 
 object BFTextureLoader : SpecializedAssetLoader<Texture> {
+    private val log = Logger("BFTextureLoader")
+
     private val BFImageHeader.glInternalFormat: Int
         get() {
             if (flags.srgb()) {
@@ -119,18 +120,18 @@ object BFTextureLoader : SpecializedAssetLoader<Texture> {
         val dataPointer = skipHeader(data)
 
         /* DEBUG */
-        println("bf magic: ${header.magic}")
-        println("bf version: ${header.version}")
-        println("bf file type: ${header.fileType}")
-        println("bf flags lz4: ${header.flags.lz4()}")
-        println("bf flags lz4hc: ${header.flags.lz4hc()}")
-        println("bf flags vflip: ${header.flags.verticallyFlipped()}")
-        println("bf flags dxt: ${header.flags.dxt()}")
-        println("bf has mipmaps: ${header.extra.hasMipmaps()}")
-        println("bf channels: ${header.extra.numberOfChannels()}")
-        println("bf width: ${header.width}")
-        println("bf height: ${header.height}")
-        println("bf uncompressed size: ${header.uncompressedSize}")
+        log.debug("bf magic: ${header.magic}")
+        log.debug("bf version: ${header.version}")
+        log.debug("bf file type: ${header.fileType}")
+        log.debug("bf flags lz4: ${header.flags.lz4()}")
+        log.debug("bf flags lz4hc: ${header.flags.lz4hc()}")
+        log.debug("bf flags vflip: ${header.flags.verticallyFlipped()}")
+        log.debug("bf flags dxt: ${header.flags.dxt()}")
+        log.debug("bf has mipmaps: ${header.extra.hasMipmaps()}")
+        log.debug("bf channels: ${header.extra.numberOfChannels()}")
+        log.debug("bf width: ${header.width}")
+        log.debug("bf height: ${header.height}")
+        log.debug("bf uncompressed size: ${header.uncompressedSize}")
 
         val realDataPointer = decompressIfNeeded(header, dataPointer, sizeWithoutHeader(dataSize))
 
