@@ -3,54 +3,52 @@ package geoconv
 import kotlinx.cinterop.*
 import platform.posix.*
 
-fun loadObjFile(from: String) {
-    memScoped {
-        val (contents, size) = readObjFile(this, from)
+fun loadObjFile(from: String): GeometryData {
+    return memScoped {
+        /* read obj file */
+        val contents = readObjFile(this, from)
         val data = GeometryData()
 
-        val parser = ObjParser(contents, size, data)
-        parser.parse()
-    }
-}
+        /* load obj data to memory */
+        fun readVertex(tokens: List<String>) {
 
-class ObjParser(private val contents: String, val size: Int, val data: GeometryData) {
-    private var pointer = 0
-
-    private fun current(): Char = contents[pointer]
-    private fun next(): Char = contents[pointer++]
-
-    private fun readUntilNewline() {
-        while (current() != '\n') next()
-    }
-
-    fun parse() {
-        while (pointer < size) {
-            when (next()) {
-                '#' -> readUntilNewline()
-                'v' -> when (next()) {
-                    ' ' -> readVertex()
-                    'n' -> readNormal()
-                    't' -> readTexCoord()
-                }
-                'f' -> readVertexNormal()
-            }
         }
-    }
 
-    private fun readTexCoord() {
+        fun readFace(tokens: List<String>) {
 
-    }
+        }
 
-    private fun readNormal() {
+        fun readNormal(tokens: List<String>) {
 
-    }
+        }
 
-    private fun readVertex() {
+        fun readTexCoord(tokens: List<String>) {
 
+        }
+
+        for (line in contents.lines()) {
+            if (line.trim().startsWith('#')) { // ignore comments
+                continue
+            }
+
+            val tokens = line.trim().split(' ')
+            val first = tokens[0]
+
+            when (first) {
+                "v" -> readVertex(tokens)
+                "vt" -> readTexCoord(tokens)
+                "vn" -> readNormal(tokens)
+                "f" -> readFace(tokens)
+            }
+
+        }
+
+        /* process the data */
+        data
     }
 }
 
-private fun readObjFile(memScope: MemScope, from: String): Pair<String, Int> {
+private fun readObjFile(memScope: MemScope, from: String): String {
     val f = fopen(from, "r") ?: throw Exception("Cannot open file $from because: ${posix_errno()}")
 
     fseek(f, 0, SEEK_END)
@@ -59,5 +57,5 @@ private fun readObjFile(memScope: MemScope, from: String): Pair<String, Int> {
     val contents = memScope.allocArray<ByteVar>(size)
     fread(contents, 1, size.toULong(), f)
     fclose(f)
-    return Pair(contents.toKString(), size)
+    return contents.toKString()
 }

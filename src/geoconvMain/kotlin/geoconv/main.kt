@@ -33,12 +33,12 @@ data class GeometryHeader(
 )
 
 class GeometryData {
-    val vertices: List<Float> = arrayListOf()
-    val texCoords: List<Float> = arrayListOf()
-    val normals: List<Float> = arrayListOf()
-    val tangents: List<Float> = arrayListOf()
-    val bitangents: List<Float> = arrayListOf()
-    val indices: List<Int> = arrayListOf()
+    val vertices: MutableList<Float> = arrayListOf()
+    val texCoords: MutableList<Float> = arrayListOf()
+    val normals: MutableList<Float> = arrayListOf()
+    val tangents: MutableList<Float> = arrayListOf()
+    val bitangents: MutableList<Float> = arrayListOf()
+    val indices: MutableList<Int> = arrayListOf()
 }
 
 fun main(args: Array<String>) {
