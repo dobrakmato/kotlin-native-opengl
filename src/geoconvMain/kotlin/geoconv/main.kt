@@ -27,7 +27,7 @@ data class GeometryHeader(
     val fileType: Byte = BF_FILE_GEOMETRY,
 
     val flags: Byte, // 1 = normals, 2 = tangents, 4 = texcoords, 8 = indices
-    val extra: Byte, //
+    val extra: Byte, // 1 = interleaved vertex data,
 
     val uncompressedSize: Int
 )

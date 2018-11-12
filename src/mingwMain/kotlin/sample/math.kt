@@ -4,6 +4,7 @@ package sample
 
 import kotlin.math.abs
 import kotlin.math.sqrt
+import kotlin.native.internal.GC
 
 /* scalar functions */
 inline fun clamp(min: Double, max: Double, value: Double) = if (value > max) max else if (value < min) min else value
@@ -75,11 +76,60 @@ inline fun clamp(min: Vector3f, max: Vector3f, value: Vector3f) = Vector3f(
 
 /* matrix classes */
 
-data class Matrix4f(val m00: Float, val m01: Float, val m02: Float, val m03: Float) {
+data class Matrix4f(
+    val m11: Float = 1f, val m12: Float = 0f, val m13: Float = 0f, val m14: Float = 0f,
+    val m21: Float = 0f, val m22: Float = 1f, val m23: Float = 0f, val m24: Float = 0f,
+    val m31: Float = 0f, val m32: Float = 0f, val m33: Float = 1f, val m34: Float = 0f,
+    val m41: Float = 0f, val m42: Float = 0f, val m43: Float = 0f, val m44: Float = 1f
+) {
 
+    fun toFloatArray() = floatArrayOf(
+        m11, m12, m13, m14,
+        m21, m22, m23, m24,
+        m31, m32, m33, m34,
+        m41, m42, m43, m44
+    )
+
+    companion object {
+
+        val IDENTITY = Matrix4f()
+
+        fun createScale(scale: Vector3f) = Matrix4f(m11 = scale.x, m22 = scale.y, m33 = scale.z)
+        fun createRotation(scale: Vector3f) {
+
+        }
+
+        fun createTranslation(scale: Vector3f) {
+
+        }
+
+        fun createTransform(scale: Vector3f, rotation: Vector3f, translation: Vector3f) {
+
+        }
+
+        fun createCamera() {
+
+        }
+
+        fun createPerspective() {
+
+        }
+
+        fun createOrthographic() {
+            
+        }
+    }
 }
 
 /* matrix functions */
+inline fun Matrix4f.transposed(): Matrix4f {
+    return Matrix4f(
+        m11, m21, m31, m41,
+        m12, m22, m32, m42,
+        m13, m23, m33, m43,
+        m14, m24, m34, m44
+    )
+}
 
 
 /* color classes */

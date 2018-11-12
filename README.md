@@ -7,8 +7,7 @@ sometime in the future.
 
 
 ## Building
-Building is currently very complicated.
+Building is currently complicated.
 
 1. Build all native projects in `thirdparty` folder using cmake to `cmake-build-debug` directories.
-2. Run `:generateInterops` gradle task.
-3. Build gradle project.
+2. Build the main Kotlin project with gradle by the `build` task. Get a coffee ☕, this will take some time.

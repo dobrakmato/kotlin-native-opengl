@@ -1,0 +1,23 @@
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904E4"
+    BEGIN
+      VALUE "CompanyName", "Matej Kormuth"
+      VALUE "FileDescription", "Kotgin - Kotlin Game Engine"
+      VALUE "FileVersion", "1.0"
+      VALUE "InternalName", "kotgin"
+      VALUE "LegalCopyright", "2018-2019 © Matej Kormuth"
+      VALUE "OriginalFilename", "kotgin.exe"
+      VALUE "ProductName", "Kotgin - Kotlin Game Engine"
+      VALUE "ProductVersion", "1.0"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 1252
+  END
+END

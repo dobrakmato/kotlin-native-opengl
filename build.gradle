@@ -6,6 +6,9 @@ repositories {
     mavenCentral()
 }
 
+def konanUserDir = System.getenv("KONAN_DATA_DIR") ?: "${System.getProperty("user.home")}/.konan"
+def resFile = file("$buildDir/konan/res/kogin.res")
+
 kotlin {
     targets {
         // For ARM, preset should be changed to presets.iosArm32 or presets.iosArm64
@@ -23,6 +26,7 @@ kotlin {
             compilations.main {
                 cinterops {
                 }
+                linkerOpts "$resFile"
             }
         }
 
@@ -37,10 +41,11 @@ kotlin {
                     lz4 {
                     }
                 }
+                linkerOpts "$resFile"
             }
         }
 
-        configure([imgconv]) {
+        configure([geoconv]) {
             compilations.main.outputKinds('EXECUTABLE')
             compilations.main.entryPoint = 'geoconv.main'
 
@@ -49,6 +54,7 @@ kotlin {
                     lz4 {
                     }
                 }
+                linkerOpts "$resFile"
             }
         }
 
@@ -65,6 +71,7 @@ kotlin {
                     galogen {
                     }
                 }
+                linkerOpts "$resFile"
             }
         }
     }
@@ -130,4 +137,26 @@ task debugProgram {
             args programFile
         }
     }
+}
+
+task windowsResources(type: Exec) {
+    def rcFile = file('kotgin.rc')
+    def path = System.getenv("PATH")
+
+    def windresDir = "$konanUserDir/dependencies/msys2-mingw-w64-x86_64-gcc-7.3.0-clang-llvm-lld-6.0.1/bin"
+
+    commandLine "$windresDir/windres", rcFile, '-O', 'coff', '-o', resFile
+    environment 'PATH', "$windresDir;$path"
+
+    inputs.file rcFile
+    outputs.file resFile
+}
+
+/* Set-up dependencies */
+project.tasks.matching {
+    it.name.startsWith('compile')
+}.all {
+    it.dependsOn 'windowsResources'
+    it.dependsOn 'generateInterops'
+    it.inputs.file resFile
 }
