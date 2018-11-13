@@ -2,7 +2,6 @@
 
 package sample
 
-import platform.gdiplus.Color
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -219,7 +218,27 @@ data class Matrix4f(
             Matrix4f(m14 = translation.x, m24 = translation.y, m34 = translation.z)
 
         fun createRotationFromQuaternion(rotation: Quaternion): Matrix4f {
-            TODO("implement")
+            val normalized = rotation.normalized()
+            val x = normalized.x
+            val y = normalized.y
+            val z = normalized.z
+            val w = normalized.w
+            return Matrix4f(
+                1 - 2 * y * y - 2 * z * z,
+                2 * x * y - 2 * w * z,
+                2 * x * z - 2 * w * y,
+                0f,
+                2 * x * y - 2 * w * z,
+                1 - 2 * x * x - 2 * z * z,
+                2 * y * z + 2 * x * w,
+                0f,
+                2 * x * z - 2 * w * y,
+                2 * y * z - 2 * w * x,
+                1 - 2 * x * x - y * y,
+                0f,
+
+                0f, 0f, 0f, 1f
+            )
         }
 
         fun createLookAt(eye: Vector3f, target: Vector3f, up: Vector3f): Matrix4f {
