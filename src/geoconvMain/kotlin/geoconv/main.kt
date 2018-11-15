@@ -27,10 +27,13 @@ data class GeometryHeader(
     val fileType: Byte = BF_FILE_GEOMETRY,
 
     val flags: Byte, // 1 = normals, 2 = tangents, 4 = texcoords, 8 = indices
-    val extra: Byte, // 1 = interleaved vertex data,
+    val extra: Byte, // 1 = interleaved vertex data, 2 = 4xLOD
 
     val uncompressedSize: Int
+    // data for one main geometry
+    // data for other LOD geometries
 )
+
 
 class GeometryData {
     val vertices: MutableList<Float> = arrayListOf()
@@ -70,6 +73,7 @@ private fun printHelp() {
     println("    -h             : Use highest LZ4 compression level (slow)")
     println("    -i             : Use indices (default)")
     println("    -n             : Normalize normal vectors (default)")
+    println("    -d             : Generate LOD(s)")
     println("\nAt least empty switch '-' is required for first argument.")
     exit(1)
 }
