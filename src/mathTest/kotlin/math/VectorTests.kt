@@ -1,4 +1,4 @@
-package sample
+package math
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

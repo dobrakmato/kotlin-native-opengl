@@ -1,13 +1,20 @@
 //@file:Suppress("NOTHING_TO_INLINE")
 
-package sample
+package math
 
 import kotlin.math.*
 import kotlin.random.Random
 
 
+/* For more information about mathematics: https://www.euclideanspace.com/maths/discrete */
+
 /*
- * Matrices are in row-major order.
+ * Matrices should be in row-major order.
+ *
+ * s_x m12 m13 m14 (x)
+ * m21 s_y m23 m24 (y)
+ * m31 m32 s_z m34 (z)
+ * t_x t_y t_z m44
  *
  *
  *         ^  +Y (UP)
@@ -16,8 +23,10 @@ import kotlin.random.Random
  *         + ----->   +X (RIGHT)
  *        /
  *       /
- *      v  -Z (BACKWARDS)
+ *      v  +Z (TOWARDS THE VIEWER)
  */
+
+// todo: https://stackoverflow.com/questions/17717600/confusion-between-c-and-opengl-matrix-order-row-major-vs-column-major
 
 /* scalar constants */
 const val PI = 3.1415926536f
@@ -124,6 +133,22 @@ data class Quaternion(val x: Float = 0f, val y: Float = 0f, val z: Float = 0f, v
 
     companion object {
         val IDENTITY = Quaternion(0f, 0f, 0f, 1f)
+
+        fun fromEuler(pitch: Float, yaw: Float, roll: Float): Quaternion {
+            val cy = cos(yaw * 0.5f)
+            val sy = sin(yaw * 0.5f)
+            val cr = cos(roll * 0.5f)
+            val sr = sin(roll * 0.5f)
+            val cp = cos(pitch * 0.5f)
+            val sp = sin(pitch * 0.5f)
+
+            return Quaternion(
+                cy * sr * cp - sy * cr * sp,
+                cy * cr * sp + sy * sr * cp,
+                sy * cr * cp - cy * sr * sp,
+                cy * cr * cp + sy * sr * sp
+            )
+        }
     }
 }
 
@@ -144,23 +169,12 @@ data class Matrix4f(
     val m41: Float = 0f, val m42: Float = 0f, val m43: Float = 0f, val m44: Float = 1f
 ) {
 
-    inline val left
-        get() = Vector3f(-m11, -m21, -m31)
-
-    inline val right
-        get() = Vector3f(m11, m21, m31)
-
     inline val up
         get() = Vector3f(m12, m22, m32)
 
     inline val down
         get() = Vector3f(-m12, -m22, -m32)
 
-    inline val backward
-        get() = Vector3f(m13, m23, m33)
-
-    inline val forward
-        get() = Vector3f(-m13, -m23, -m33)
 
     inline operator fun times(rhs: Matrix4f): Matrix4f {
         return Matrix4f(
@@ -236,7 +250,6 @@ data class Matrix4f(
                 2 * y * z - 2 * w * x,
                 1 - 2 * x * x - y * y,
                 0f,
-
                 0f, 0f, 0f, 1f
             )
         }
@@ -294,6 +307,37 @@ inline fun Matrix4f.toFloatArray() = floatArrayOf(
     m31, m32, m33, m34,
     m41, m42, m43, m44
 )
+
+inline fun Matrix4f.determinant(): Float {
+    return m14 * m23 * m32 * m41 - m13 * m24 * m32 * m41 - m14 * m22 * m33 * m41 + m12 * m24 * m33 * m41 +
+            m13 * m22 * m34 * m41 - m12 * m23 * m34 * m41 - m14 * m23 * m31 * m42 + m13 * m24 * m31 * m42 +
+            m14 * m21 * m33 * m42 - m11 * m24 * m33 * m42 - m13 * m21 * m34 * m42 + m11 * m23 * m34 * m42 +
+            m14 * m22 * m31 * m43 - m12 * m24 * m31 * m43 - m14 * m21 * m32 * m43 + m11 * m24 * m32 * m43 +
+            m12 * m21 * m34 * m43 - m11 * m22 * m34 * m43 - m13 * m22 * m31 * m44 + m12 * m23 * m31 * m44 +
+            m13 * m21 * m32 * m44 - m11 * m23 * m32 * m44 - m12 * m21 * m33 * m44 + m11 * m22 * m33 * m44
+}
+
+inline fun Matrix4f.inverse(): Matrix4f {
+    val scale = 1 / determinant()
+    return Matrix4f(
+        (m23 * m34 * m42 - m24 * m33 * m42 + m24 * m32 * m43 - m22 * m34 * m43 - m23 * m32 * m44 + m22 * m33 * m44) * scale,
+        (m14 * m33 * m42 - m13 * m34 * m42 - m14 * m32 * m43 + m12 * m34 * m43 + m13 * m32 * m44 - m12 * m33 * m44) * scale,
+        (m13 * m24 * m42 - m14 * m23 * m42 + m14 * m22 * m43 - m12 * m24 * m43 - m13 * m22 * m44 + m12 * m23 * m44) * scale,
+        (m14 * m23 * m32 - m13 * m24 * m32 - m14 * m22 * m33 + m12 * m24 * m33 + m13 * m22 * m34 - m12 * m23 * m34) * scale,
+        (m24 * m33 * m41 - m23 * m34 * m41 - m24 * m31 * m43 + m21 * m34 * m43 + m23 * m31 * m44 - m21 * m33 * m44) * scale,
+        (m13 * m34 * m41 - m14 * m33 * m41 + m14 * m31 * m43 - m11 * m34 * m43 - m13 * m31 * m44 + m11 * m33 * m44) * scale,
+        (m14 * m23 * m41 - m13 * m24 * m41 - m14 * m21 * m43 + m11 * m24 * m43 + m13 * m21 * m44 - m11 * m23 * m44) * scale,
+        (m13 * m24 * m31 - m14 * m23 * m31 + m14 * m21 * m33 - m11 * m24 * m33 - m13 * m21 * m34 + m11 * m23 * m34) * scale,
+        (m22 * m34 * m41 - m24 * m32 * m41 + m24 * m31 * m42 - m21 * m34 * m42 - m22 * m31 * m44 + m21 * m32 * m44) * scale,
+        (m14 * m32 * m41 - m12 * m34 * m41 - m14 * m31 * m42 + m11 * m34 * m42 + m12 * m31 * m44 - m11 * m32 * m44) * scale,
+        (m12 * m24 * m41 - m14 * m22 * m41 + m14 * m21 * m42 - m11 * m24 * m42 - m12 * m21 * m44 + m11 * m22 * m44) * scale,
+        (m14 * m22 * m31 - m12 * m24 * m31 - m14 * m21 * m32 + m11 * m24 * m32 + m12 * m21 * m34 - m11 * m22 * m34) * scale,
+        (m23 * m32 * m41 - m22 * m33 * m41 - m23 * m31 * m42 + m21 * m33 * m42 + m22 * m31 * m43 - m21 * m32 * m43) * scale,
+        (m12 * m33 * m41 - m13 * m32 * m41 + m13 * m31 * m42 - m11 * m33 * m42 - m12 * m31 * m43 + m11 * m32 * m43) * scale,
+        (m13 * m22 * m41 - m12 * m23 * m41 - m13 * m21 * m42 + m11 * m23 * m42 + m12 * m21 * m43 - m11 * m22 * m43) * scale,
+        (m12 * m23 * m31 - m13 * m22 * m31 + m13 * m21 * m32 - m11 * m23 * m32 - m12 * m21 * m33 + m11 * m22 * m33) * scale
+    )
+}
 
 /* geometric shape classes */
 

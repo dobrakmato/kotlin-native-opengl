@@ -14,6 +14,11 @@ kotlin {
         // For ARM, preset should be changed to presets.iosArm32 or presets.iosArm64
         // For Linux, preset should be changed to e.g. presets.linuxX64
         // For MacOS, preset should be changed to e.g. presets.macosX64
+
+        /* libraries */
+        fromPreset(presets.mingwX64, 'math')
+
+        /* applications */
         fromPreset(presets.mingwX64, 'mingw')
         fromPreset(presets.mingwX64, 'imgconv')
         fromPreset(presets.mingwX64, 'geoconv')
@@ -85,9 +90,11 @@ kotlin {
         }
         geoconvMain {
             dependsOn bfinfoMain
+            dependsOn mathMain
         }
         mingwMain {
             dependsOn bfinfoMain
+            dependsOn mathMain
         }
         mingwTest {
         }

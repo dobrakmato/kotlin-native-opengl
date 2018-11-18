@@ -11,3 +11,19 @@ Building is currently complicated.
 
 1. Build all native projects in `thirdparty` folder using cmake to `cmake-build-debug` directories.
 2. Build the main Kotlin project with gradle by the `build` task. Get a coffee ☕, this will take some time.
+
+## Packages
+
+- math
+- io
+- bf
+- utils
+- renderer
+- engine
+
+## Tools
+
+- bfinfo - inspect and view various bf files
+- imgconv - image importer (mipmap generator, dxt compressor)
+- geoconv - geometry importer (lod generator, optimizer)
+- matcomp - material compiler

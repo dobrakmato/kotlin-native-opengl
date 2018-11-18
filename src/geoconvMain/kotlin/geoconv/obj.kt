@@ -1,6 +1,7 @@
 package geoconv
 
 import kotlinx.cinterop.*
+import math.Vector3f
 import platform.posix.*
 
 fun loadObjFile(from: String): GeometryData {
@@ -9,9 +10,11 @@ fun loadObjFile(from: String): GeometryData {
         val contents = readObjFile(this, from)
         val data = GeometryData()
 
+        val vertices = arrayListOf<Vector3f>()
+
         /* load obj data to memory */
         fun readVertex(tokens: List<String>) {
-
+            vertices.add(Vector3f(tokens[0].toFloat(), tokens[1].toFloat(), tokens[2].toFloat()))
         }
 
         fun readFace(tokens: List<String>) {
