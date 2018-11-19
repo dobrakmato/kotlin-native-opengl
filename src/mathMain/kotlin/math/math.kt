@@ -9,25 +9,22 @@ import kotlin.random.Random
 /* For more information about mathematics: https://www.euclideanspace.com/maths/discrete */
 
 /*
- * Matrices should be in row-major order.
- *
- * s_x m12 m13 m14 (x)
- * m21 s_y m23 m24 (y)
- * m31 m32 s_z m34 (z)
- * t_x t_y t_z m44
+ *  R   U   F
+ * (x) (y) (z)
+ * s_x m12 m13 t_x
+ * m21 s_y m23 t_y
+ * m31 m32 s_z t_z
+ * m41 m42 m43 m44
  *
  *
  *         ^  +Y (UP)
  *         |
- *         |
- *         + ----->   +X (RIGHT)
- *        /
- *       /
- *      v  +Z (TOWARDS THE VIEWER)
+ *         |    +Z (FORWARD)
+ *         |  /
+ *         | /
+ *         + --------->   +X (RIGHT)
+ *
  */
-
-// todo: https://stackoverflow.com/questions/17717600/confusion-between-c-and-opengl-matrix-order-row-major-vs-column-major
-
 /* scalar constants */
 const val PI = 3.1415926536f
 const val HALF_PI = PI * 0.5f
@@ -169,11 +166,23 @@ data class Matrix4f(
     val m41: Float = 0f, val m42: Float = 0f, val m43: Float = 0f, val m44: Float = 1f
 ) {
 
+    inline val right
+        get() = Vector3f(m11, m21, m31)
+
+    inline val left
+        get() = Vector3f(-m11, -m21, -m31)
+
     inline val up
         get() = Vector3f(m12, m22, m32)
 
     inline val down
         get() = Vector3f(-m12, -m22, -m32)
+
+    inline val forward
+        get() = Vector3f(m13, m23, m33)
+
+    inline val backward
+        get() = Vector3f(-m13, -m23, -m33)
 
 
     inline operator fun times(rhs: Matrix4f): Matrix4f {
@@ -301,6 +310,9 @@ inline fun Matrix4f.transposed(): Matrix4f {
     )
 }
 
+/**
+ * To use in OpenGL we you need to set transposed to GL_TRUE.
+ */
 inline fun Matrix4f.toFloatArray() = floatArrayOf(
     m11, m12, m13, m14,
     m21, m22, m23, m24,
