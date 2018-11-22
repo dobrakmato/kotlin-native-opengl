@@ -7,6 +7,7 @@ import kotlin.random.Random
 
 
 /* For more information about mathematics: https://www.euclideanspace.com/maths/discrete */
+/* https://www.scratchapixel.com/lessons/mathematics-physics-for-computer-graphics/geometry */
 
 /*
  *  R   U   F
@@ -16,6 +17,8 @@ import kotlin.random.Random
  * m31 m32 s_z t_z
  * m41 m42 m43 m44
  *
+ * (column major)
+ * (left hand coordinate system)
  *
  *         ^  +Y (UP)
  *         |
@@ -55,8 +58,18 @@ inline fun pow3(f: Float) = f * f * f
 inline fun toDegrees(rad: Float) = rad * (180.0f * INV_PI)
 inline fun toRadians(deg: Float) = deg * (PI / 180.0f)
 
+
+infix fun Float.safediv(rhs: Float): Float {
+    if (rhs == 0f) {
+        throw ArithmeticException("Division by zero!")
+    }
+    return this / rhs
+}
+
 /* vector classes */
 data class Vector2f(val x: Float = 0f, val y: Float = 0f)
+
+inline fun vec2(x: Float, y: Float) = Vector2f(x, y)
 
 data class Vector3f(val x: Float = 0f, val y: Float = 0f, val z: Float = 0f) {
     constructor(xyz: Float) : this(xyz, xyz, xyz)
@@ -85,10 +98,11 @@ data class Vector3f(val x: Float = 0f, val y: Float = 0f, val z: Float = 0f) {
 
 /* vector functions */
 
+inline fun vec3(x: Float, y: Float, z: Float) = Vector3f(x, y, z)
 inline fun Vector3f.abs() = Vector3f(abs(x), abs(y), abs(z))
 inline fun Vector3f.lengthSquared() = pow2(x) + pow2(y) + pow2(z)
 inline fun Vector3f.length() = sqrt(lengthSquared())
-inline fun Vector3f.normalized() = this * (1 / length())
+inline fun Vector3f.normalized() = this * (1f safediv length())
 inline infix fun Vector3f.dot(rhs: Vector3f) = x * rhs.x + y * rhs.y + z * rhs.z
 inline infix fun Vector3f.cross(rhs: Vector3f): Vector3f {
     return Vector3f(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x)
@@ -154,7 +168,7 @@ inline fun Quaternion.conjugate() = Quaternion(-x, -y, -z, w)
 
 inline fun Quaternion.lengthSquared() = pow2(x) + pow2(y) + pow2(z) + pow2(w)
 inline fun Quaternion.length() = sqrt(lengthSquared())
-inline fun Quaternion.normalized() = this * (1 / length())
+inline fun Quaternion.normalized() = this * (1f safediv length())
 inline infix fun Quaternion.dot(rhs: Quaternion) = x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w
 
 /* matrix classes */
@@ -215,7 +229,7 @@ data class Matrix4f(
         var z = pointRhs.x * m31 + pointRhs.y * m32 + pointRhs.z * m33 + m34
         val w = pointRhs.x * m41 + pointRhs.y * m41 + pointRhs.z * m43 + m44
 
-        val wInv = 1 / w
+        val wInv = 1f safediv w
 
         x *= wInv
         y *= wInv
@@ -320,6 +334,15 @@ inline fun Matrix4f.toFloatArray() = floatArrayOf(
     m41, m42, m43, m44
 )
 
+/**
+ * To use in OpenGL we you need to set transposed to GL_TRUE.
+ */
+inline fun Matrix4f.toOrientationFloatArray() = floatArrayOf(
+    m11, m12, m13,
+    m21, m22, m23,
+    m31, m32, m33
+)
+
 inline fun Matrix4f.determinant(): Float {
     return m14 * m23 * m32 * m41 - m13 * m24 * m32 * m41 - m14 * m22 * m33 * m41 + m12 * m24 * m33 * m41 +
             m13 * m22 * m34 * m41 - m12 * m23 * m34 * m41 - m14 * m23 * m31 * m42 + m13 * m24 * m31 * m42 +
@@ -330,7 +353,7 @@ inline fun Matrix4f.determinant(): Float {
 }
 
 inline fun Matrix4f.inverse(): Matrix4f {
-    val scale = 1 / determinant()
+    val scale = 1f safediv determinant()
     return Matrix4f(
         (m23 * m34 * m42 - m24 * m33 * m42 + m24 * m32 * m43 - m22 * m34 * m43 - m23 * m32 * m44 + m22 * m33 * m44) * scale,
         (m14 * m33 * m42 - m13 * m34 * m42 - m14 * m32 * m43 + m12 * m34 * m43 + m13 * m32 * m44 - m12 * m33 * m44) * scale,
