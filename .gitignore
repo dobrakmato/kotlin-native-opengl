@@ -188,6 +188,8 @@ gradle-app.setting
 
 # End of https://www.gitignore.io/api/cmake,gradle,kotlin,clion+all,intellij+all
 
+# buildtools
+buildtools
 
 # cinterop workaround
 src/nativeInterop/cinterop/*.def

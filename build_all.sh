@@ -9,7 +9,7 @@ START_TIME=$SECONDS
 # operating systems.
 #
 # This environment can be easily obtained with MSYS2 on Windows.
-# For more information follow the guide: https://github.com/orlp/dev-on-windows/wiki/Installing-GCC--&-MSYS2
+# For more information follow the guide: https://github.com/orlp/dev-on-windows/wiki/Installing-GCC--&-MSYS2-
 
 echo "----------------------------------------------------------------"
 echo "----------------------- KOTGIN BUILD SCRIPT --------------------"
@@ -18,10 +18,19 @@ echo "JAVA_HOME=$JAVA_HOME"
 
 # Add JAVA_HOME to PATH in case it is not there.
 export PATH="$JAVA_HOME/bin":$PATH
-export PATH="C:/Program Files/Java/jdk1.8.0_112/bin":$PATH
 export PATH=/c/msys64/mingw32/bin:$PATH
 export PATH=/c/msys64/mingw64/bin:$PATH
 echo "PATH=$PATH"
+
+# create TEMP dir if not set for gcc
+if [[ -z "${TMP}" ]]; then
+    mkdir -p "buildtools/tmp"
+    cd "buildtools/tmp"
+    BUILDTOOLS_TMP=`pwd` # relative paths do not work on msys on windows
+    cd ../../
+    export TMP="$BUILDTOOLS_TMP"
+    export TEMP="$BUILDTOOLS_TMP"
+fi
 
 CMAKE_GENERATOR="CodeBlocks - MinGW Makefiles"
 
@@ -44,7 +53,6 @@ function check_tool_working {
     if [[ $? != 0 ]]; then echo "ERROR: $1 not working!"; exit 1; fi
 }
 
-#check_tool_working "Java" "java -version"
 check_tool_working "Gradle" "./gradlew -v"
 check_tool_working "gcc" "gcc -v"
 check_tool_working "g++" "g++ -v"

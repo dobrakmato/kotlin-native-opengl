@@ -152,7 +152,7 @@ task windowsResources(type: Exec) {
 
     def windresDir = "$konanUserDir/dependencies/msys2-mingw-w64-x86_64-gcc-7.3.0-clang-llvm-lld-6.0.1/bin"
 
-    commandLine "$windresDir/windres", rcFile, '-O', 'coff', '-o', resFile
+    commandLine "$windresDir/windres", '--use-temp-file', rcFile, '-O', 'coff', '-o', resFile
     environment 'PATH', "$windresDir;$path"
 
     inputs.file rcFile
