@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.6)
 project(stb C)
 
 set(MAKE_GENERATOR_PLATFORM x64)
