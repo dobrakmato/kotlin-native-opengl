@@ -55,9 +55,9 @@ fun Path.withExtension(newExtension: String): Path {
 
 data class FileData(val size: Long, val data: CArrayPointer<ByteVar>)
 
-fun FileData.byteAt(pos: Int): Byte = data[pos]
-fun FileData.uByteAt(pos: Int): UByte = data[pos].toUByte()
-fun FileData.shortAt(pos: Int): Short {
+inline fun FileData.byteAt(pos: Int): Byte = data[pos]
+inline fun FileData.uByteAt(pos: Int): UByte = data[pos].toUByte()
+inline fun FileData.shortAt(pos: Int): Short {
     val a = data[pos]
     val b = data[pos + 1]
 
@@ -65,9 +65,9 @@ fun FileData.shortAt(pos: Int): Short {
             (b.toInt() shl 8)).toShort()
 }
 
-fun FileData.uShortAt(pos: Int): UShort = this.shortAt(pos).toUShort()
+inline fun FileData.uShortAt(pos: Int): UShort = this.shortAt(pos).toUShort()
 
-fun FileData.intAt(pos: Int): Int {
+inline fun FileData.intAt(pos: Int): Int {
     val a = data[pos]
     val b = data[pos + 1]
     val c = data[pos + 2]
@@ -79,9 +79,9 @@ fun FileData.intAt(pos: Int): Int {
             (d.toInt() shl 24)
 }
 
-fun FileData.uIntAt(pos: Int): UInt = this.intAt(pos).toUInt()
+inline fun FileData.uIntAt(pos: Int): UInt = this.intAt(pos).toUInt()
 
-fun FileData.longAt(pos: Int): Long {
+inline fun FileData.longAt(pos: Int): Long {
     val a = data[pos]
     val b = data[pos + 1]
     val c = data[pos + 2]
@@ -101,7 +101,61 @@ fun FileData.longAt(pos: Int): Long {
             (h.toLong() shl 56)
 }
 
-fun FileData.uLongAt(pos: Int): ULong = this.longAt(pos).toULong()
+inline fun FileData.uLongAt(pos: Int): ULong = this.longAt(pos).toULong()
+
+inline fun FileData.floatAt(pos: Int): Float = Float.fromBits(intAt(pos))
+inline fun FileData.doubleAt(pos: Int): Double = Double.fromBits(longAt(pos))
+
+inline fun FileData.create(bytes: Long): FileData {
+    return FileData(bytes, nativeHeap.allocArray(bytes))
+}
+
+inline fun FileData.free() {
+    nativeHeap.free(data)
+}
+
+/* file data buffer */
+
+class FileDataBuffer(private val fileData: FileData) {
+    private var pos: Int = 0
+
+    fun readByte(): Byte = fileData.byteAt(pos++)
+    fun readShort(): Short {
+        val r = fileData.shortAt(pos)
+        pos += 2
+        return r
+    }
+
+    fun readInt(): Int {
+        val r = fileData.intAt(pos)
+        pos += 4
+        return r
+    }
+
+    fun readLong(): Long {
+        val r = fileData.longAt(pos)
+        pos += 8
+        return r
+    }
+
+    fun readFloat(): Float {
+        val r = fileData.floatAt(pos)
+        pos += 4
+        return r
+    }
+
+    fun readDouble(): Double {
+        val r = fileData.doubleAt(pos)
+        pos += 8
+        return r
+    }
+
+    fun readUByte(): UByte = readByte().toUByte()
+    fun readUShort(): UShort = readShort().toUShort()
+    fun readUInt(): UInt = readInt().toUInt()
+    fun readULong(): ULong = readLong().toULong()
+}
+
 
 /* read functions */
 
