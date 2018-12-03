@@ -1,4 +1,4 @@
-//@file:Suppress("NOTHING_TO_INLINE")
+@file:Suppress("NOTHING_TO_INLINE")
 
 package math
 
@@ -67,9 +67,39 @@ infix fun Float.safediv(rhs: Float): Float {
 }
 
 /* vector classes */
-data class Vector2f(val x: Float = 0f, val y: Float = 0f)
+data class Vector2f(val x: Float = 0f, val y: Float = 0f) {
+    constructor(xyz: Float) : this(xyz, xyz)
+
+    inline operator fun plus(rhs: Vector2f) = Vector2f(x + rhs.x, y + rhs.y)
+    inline operator fun minus(rhs: Vector2f) = Vector2f(x - rhs.x, y - rhs.y)
+
+    inline operator fun plus(rhs: Float) = Vector2f(x + rhs, y + rhs)
+    inline operator fun minus(rhs: Float) = Vector2f(x - rhs, y - rhs)
+    inline operator fun times(rhs: Float) = Vector2f(x * rhs, y * rhs)
+    inline operator fun div(rhs: Float) = Vector2f(x / rhs, y / rhs)
+
+    inline operator fun unaryMinus() = Vector2f(-x, -y)
+
+    companion object {
+        val UNIT_X = Vector2f(1f, 0f)
+        val UNIT_Y = Vector2f(0f, 1f)
+        val ZERO = Vector2f(0f)
+        val ONE = Vector2f(1f)
+
+        inline val RANDOM
+            get() = Vector2f(Random.nextFloat(), Random.nextFloat())
+    }
+}
 
 inline fun vec2(x: Float, y: Float) = Vector2f(x, y)
+inline fun Vector2f.abs() = Vector2f(abs(x), abs(y))
+inline fun Vector2f.lengthSquared() = pow2(x) + pow2(y)
+inline fun Vector2f.length() = sqrt(lengthSquared())
+inline fun Vector2f.normalized() = this * (1f safediv length())
+inline infix fun Vector2f.dot(rhs: Vector2f) = x * rhs.x + y * rhs.y
+
+inline fun distance(a: Vector2f, b: Vector2f) = (a - b).length()
+inline fun distanceSquared(a: Vector2f, b: Vector2f) = (a - b).lengthSquared()
 
 data class Vector3f(val x: Float = 0f, val y: Float = 0f, val z: Float = 0f) {
     constructor(xyz: Float) : this(xyz, xyz, xyz)
