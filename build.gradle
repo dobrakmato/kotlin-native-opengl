@@ -6,6 +6,7 @@ repositories {
     mavenCentral()
 }
 
+import org.gradle.internal.os.OperatingSystem
 def konanUserDir = System.getenv("KONAN_DATA_DIR") ?: "${System.getProperty("user.home")}/.konan"
 def resFile = file("$buildDir/konan/res/kogin.res")
 
@@ -17,6 +18,7 @@ kotlin {
 
         /* libraries */
         fromPreset(presets.mingwX64, 'math')
+        fromPreset(presets.mingwX64, 'io')
 
         /* applications */
         fromPreset(presets.mingwX64, 'mingw')
@@ -163,7 +165,10 @@ task windowsResources(type: Exec) {
 project.tasks.matching {
     it.name.startsWith('compile')
 }.all {
-    it.dependsOn 'windowsResources'
+    // run windres only on windowses
+    if (OperatingSystem.current().isWindows()) {
+        it.dependsOn 'windowsResources'
+    }
     it.dependsOn 'generateInterops'
     it.inputs.file resFile
 }
