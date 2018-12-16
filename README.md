@@ -26,8 +26,8 @@ This will take around 5 - 6 minutes.
 ## Packages
 
 - math - vec2, vec3, mat4, quat, scalar utils
-- io - text file reading, binary file reading, sync / async reading and writing, abs path, relative path, extension, join two paths, buff(readXY, writeXY), File.XYat(pos)
-- utils - timer, cmdopts parsing, logging, primitive vectors (arraylists)
+- io - text file reading, binary file reading, sync / (async) reading and writing, abs path, relative path, extension, join two paths, buff(readXY, writeXY), File.XYat(pos)
+- utils - timer, cmdopts parsing, logging, primitive vectors (arraylists), env variables
 - bf - bf headers parsing, bf data access, compression & decompression, loading to memory
 - bf_tools - bfinfo, bfview, imgconv, geoconv, matmake
 - engine - gl objects, asset pipeline, visibility, scene graph, rendering, input, windows
