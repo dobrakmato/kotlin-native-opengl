@@ -1,6 +1,5 @@
 package utils
 
-
 enum class LogLevel(val level: Int) {
     DEBUG(0),
     INFO(1),
@@ -12,12 +11,12 @@ class Logger(private val name: String) {
 
     var logLevel: LogLevel = LogLevel.DEBUG
 
-    fun debug(message: String) = log(LogLevel.DEBUG, message)
-    fun info(message: String) = log(LogLevel.INFO, message)
-    fun warn(message: String) = log(LogLevel.WARN, message)
-    fun error(message: String) = log(LogLevel.ERROR, message)
+    inline fun debug(message: String) = log(LogLevel.DEBUG, message)
+    inline fun info(message: String) = log(LogLevel.INFO, message)
+    inline fun warn(message: String) = log(LogLevel.WARN, message)
+    inline fun error(message: String) = log(LogLevel.ERROR, message)
 
-    private fun log(level: LogLevel, message: String) {
+    fun log(level: LogLevel, message: String) {
         if (level.level >= logLevel.level) {
             println(format(level, message))
         }

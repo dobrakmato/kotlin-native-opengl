@@ -3,8 +3,12 @@ package utils
 import kotlin.system.getTimeMillis
 
 /* simple timer */
-class SimpleTimer {
+class Timer {
     private var start: Long = 0
+
+    /**
+     * Milliseconds
+     */
     var total: Long = 0
         private set
     var laps: Long = 0
@@ -21,5 +25,8 @@ class SimpleTimer {
         return took
     }
 
+    /**
+     * Milliseconds
+     */
     inline fun avg() = total.toFloat() / laps
 }

@@ -1,10 +1,11 @@
 package utils
 
+import kotlinx.cinterop.pin
 import kotlinx.cinterop.toKString
 import platform.posix.posix_errno
 import platform.posix.putenv
 
-/* python like funtions */
+/* python like functions */
 operator fun String.times(times: Int): String {
     val sb = StringBuilder(this.length * times)
     repeat(times) {
@@ -22,7 +23,8 @@ fun getenv(key: String, default: String? = null): String? {
 /* .env loader */
 fun loadDotEnv(envLines: Array<String>) {
     envLines.forEach {
-        if (putenv(it.trim()) != 0) {
+        val pinned = it.trim().pin() /* this should prevent from value being removed or moved */
+        if (putenv(pinned.get()) != 0) {
             throw RuntimeException("Cannot putenv() errno=${posix_errno()}")
         }
     }
@@ -92,7 +94,7 @@ fun errnoReadable(): String {
         59 -> "EBFONT      59   Bad font file format"
         60 -> "ENOSTR      60   Device not a stream"
         61 -> "ENODATA     61   No data available"
-        62 -> "ETIME       62   SimpleTimer expired"
+        62 -> "ETIME       62   Timer expired"
         63 -> "ENOSR       63   Out of streams resources"
         64 -> "ENONET      64   Machine is not on the network"
         65 -> "ENOPKG      65   Package not installed"

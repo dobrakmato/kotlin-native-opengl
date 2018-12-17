@@ -1,8 +1,6 @@
 package utils
 
-import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class CommandLineOptionsTest {
 
@@ -28,11 +26,74 @@ class CommandLineOptionsTest {
     }
 
     @Test
-    fun create() {
+    fun `empty args`() {
         val actual = opts.parse(arrayOf("-"))
-        assertFalse(actual.shouldDisplayHelp())
+        assertTrue(actual.shouldDisplayHelp())
+        assertFalse(actual.hasAllRequiredValues())
+        assertFalse(actual.isValuePresent("input-file"))
         assertFalse(actual.isOptionPresent("h"))
         assertFalse(actual.isOptionPresent("l"))
         assertFalse(actual.isOptionPresent("use-lz4"))
+    }
+
+    @Test
+    fun `single opt arg`() {
+        val actual = opts.parse(arrayOf("-lhdfs"))
+        assertTrue(actual.shouldDisplayHelp())
+        assertFalse(actual.hasAllRequiredValues())
+        assertTrue(actual.isOptionPresent("l"))
+        assertTrue(actual.isOptionPresent("h"))
+        assertTrue(actual.isOptionPresent("use-dxt"))
+        assertTrue(actual.isOptionPresent("f"))
+        assertTrue(actual.isOptionPresent("srgb"))
+    }
+
+    @Test
+    fun `multiple opt args`() {
+        val actual = opts.parse(arrayOf("-l", "-h", "-df", "-s", "-"))
+        assertTrue(actual.shouldDisplayHelp())
+        assertFalse(actual.hasAllRequiredValues())
+        assertTrue(actual.isOptionPresent("l"))
+        assertTrue(actual.isOptionPresent("h"))
+        assertTrue(actual.isOptionPresent("use-dxt"))
+        assertTrue(actual.isOptionPresent("f"))
+        assertTrue(actual.isOptionPresent("srgb"))
+    }
+
+    @Test
+    fun `opt and values`() {
+        val actual = opts.parse(arrayOf("-lhdfs", "--input-file=test"))
+        assertTrue(actual.hasAllRequiredValues())
+        assertTrue(opts.hasOption("h"))
+        assertTrue(actual.isOptionPresent("h"))
+        assertFalse(actual.isOptionPresent("help"))
+        assertFalse(actual.shouldDisplayHelp())
+
+        assertTrue(actual.isOptionPresent("l"))
+        assertTrue(actual.isOptionPresent("h"))
+        assertTrue(actual.isOptionPresent("use-dxt"))
+        assertTrue(actual.isOptionPresent("f"))
+        assertTrue(actual.isOptionPresent("srgb"))
+        assertTrue(actual.isValuePresent("input-file"))
+        assertEquals("test", actual.getValue("input-file"))
+        assertFails {
+            actual.getValue("output-file")
+        }
+    }
+
+    @Test
+    fun `opt and more values`() {
+        val actual = opts.parse(arrayOf("-l6dfs", "--input-file=test", "--test-value=123", "--output-file=kotlin"))
+        assertTrue(actual.hasAllRequiredValues())
+        assertFalse(actual.shouldDisplayHelp())
+
+        assertTrue(actual.isOptionPresent("l"))
+        assertTrue(actual.isOptionPresent("16bit"))
+        assertTrue(actual.isOptionPresent("use-dxt"))
+        assertTrue(actual.isOptionPresent("f"))
+        assertTrue(actual.isOptionPresent("srgb"))
+        assertTrue(actual.isValuePresent("input-file"))
+        assertEquals("test", actual.getValue("input-file"))
+        assertEquals("kotlin", actual.getValue("output-file"))
     }
 }

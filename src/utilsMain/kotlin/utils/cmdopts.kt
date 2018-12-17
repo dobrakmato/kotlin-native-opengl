@@ -30,6 +30,7 @@ class Options {
     fun requiredValue(long: String, description: String): Options {
         val value = Value(long, description, true, null)
         values.add(value)
+        valueLongNames[long] = value
         longestValueLong = max(longestValueLong, long.length)
         return this
     }
@@ -37,6 +38,8 @@ class Options {
     fun optionalValue(long: String, description: String, defaultValue: String? = null): Options {
         val value = Value(long, description, false, defaultValue)
         values.add(value)
+        valueLongNames[long] = value
+        longestValueLong = max(longestValueLong, long.length)
         return this
     }
 
@@ -70,7 +73,7 @@ class Options {
             return "    --${value.long.padEnd(
                 longestValueLong,
                 ' '
-            )}          : ${if (value.required) "(REQUIRED)" else ""} ${value.description}"
+            )}          : ${if (value.required) "(REQUIRED) " else ""}${value.description}"
         }
 
         println("$appName ${combineAllOptionShorts()} ${combineAllRequiredValues()}[OPTIONAL_ARGS]")
@@ -87,7 +90,7 @@ class Options {
 
     fun hasOption(shortOrLongName: String): Boolean {
         if (shortOrLongName.isEmpty()) throw IllegalArgumentException("Empty name is not valid name!")
-        return shortOrLongName[0] in optionShortNames || shortOrLongName in optionLongNames
+        return (shortOrLongName.length == 1 && shortOrLongName[0] in optionShortNames) || shortOrLongName in optionLongNames
     }
 }
 
@@ -99,7 +102,7 @@ class ActualOptions(private val options: Options, private val cmdLine: Array<Str
     fun isOptionPresent(shortOrLongName: String): Boolean {
         if (shortOrLongName.isEmpty()) throw IllegalArgumentException("Empty name is not valid name!")
         for (option in presentOptions) {
-            if (option.short == shortOrLongName[1] || option.long == shortOrLongName) {
+            if ((shortOrLongName.length == 1 && option.short == shortOrLongName[0]) || option.long == shortOrLongName) {
                 return true
             }
         }
@@ -125,7 +128,7 @@ class ActualOptions(private val options: Options, private val cmdLine: Array<Str
 
     fun hasAllRequiredValues(): Boolean {
         for (value in options.values) {
-            if (value.required && isValuePresent(value.long)) {
+            if (value.required && !isValuePresent(value.long)) {
                 return false
             }
         }
