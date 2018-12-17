@@ -19,6 +19,7 @@ kotlin {
         /* libraries */
         fromPreset(presets.mingwX64, 'math')
         fromPreset(presets.mingwX64, 'io')
+        fromPreset(presets.mingwX64, 'utils')
 
         /* applications */
         fromPreset(presets.mingwX64, 'mingw')
