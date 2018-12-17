@@ -20,6 +20,7 @@ kotlin {
         fromPreset(presets.mingwX64, 'math')
         fromPreset(presets.mingwX64, 'io')
         fromPreset(presets.mingwX64, 'utils')
+        fromPreset(presets.mingwX64, 'bf')
 
         /* applications */
         fromPreset(presets.mingwX64, 'mingw')
@@ -86,6 +87,11 @@ kotlin {
     sourceSets {
         // Note: To enable common source sets please comment out 'kotlin.import.noCommonSourceSets' property
         // in gradle.properties file and re-import your project in IDE.
+        ioMain {
+        }
+        bfMain{
+            dependsOn ioMain
+        }
         bfinfoMain {
         }
         imgconvMain {
