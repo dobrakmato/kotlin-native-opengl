@@ -193,6 +193,13 @@ data class ByteBuffer(val size: Long, val data: CArrayPointer<UByteVar>) {
         return utf8.stringFromUtf8()
     }
 
+    inline fun pointerTo(index: Int): CPointer<UByteVarOf<UByte>> {
+        if (index < 0) throw IllegalArgumentException("Index must be grater or equal to zero.")
+        return (this.data + index.toLong())!!
+    }
+
+    inline fun pointerToPosition() = pointerTo(pos)
+
     companion object {
         inline fun create(bytes: Long): ByteBuffer {
             return ByteBuffer(bytes, nativeHeap.allocArray(bytes))

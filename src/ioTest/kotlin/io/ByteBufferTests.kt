@@ -1,9 +1,8 @@
 package io
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFails
-import kotlin.test.assertTrue
+import kotlinx.cinterop.*
+import platform.windows.CHARVar
+import kotlin.test.*
 
 class ByteBufferTests {
 
@@ -320,6 +319,27 @@ class ByteBufferTests {
         assertEquals("ahoj", buffer.readString())
         assertEquals(28.159712, buffer.readDouble())
 
+
+        buffer.free()
+    }
+
+    @Test
+    fun `pointer to`() {
+        val buffer = ByteBuffer.create(20)
+        assertEquals(buffer.data, buffer.pointerToPosition())
+        assertEquals(buffer.data, buffer.pointerTo(0))
+        assertNotEquals(buffer.data, buffer.pointerTo(1))
+        assertFails {
+            buffer.pointerTo(-1)
+        }
+        buffer.writeString("kotlin")
+        assertEquals((buffer.data.toLong() + 4L).toCPointer<UByteVar>(), buffer.pointerTo(4))
+
+        // memory: 6[int] k[byte] o[byte] t l i n
+        assertEquals(6, buffer.pointerTo(0).toLong().toCPointer<IntVar>()!!.pointed.value)
+        assertEquals(108.toUByte(), buffer.pointerTo(7).toLong().toCPointer<UByteVar>()!!.pointed.value)
+        assertEquals(105.toUByte(), buffer.pointerTo(8).toLong().toCPointer<UByteVar>()!!.pointed.value)
+        assertEquals(110.toUByte(), buffer.pointerTo(9).toLong().toCPointer<UByteVar>()!!.pointed.value)
 
         buffer.free()
     }
