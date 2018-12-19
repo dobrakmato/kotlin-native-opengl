@@ -1,7 +1,6 @@
 package bf
 
 import io.ByteBuffer
-import kotlinx.cinterop.NativePtr
 import kotlin.math.max
 
 /* image flags */
@@ -65,6 +64,23 @@ data class BfImageHeader(
     val width: UShort,
     val height: UShort
 )
+
+// todo: tests
+fun computeBfImagePayloadSize(bfImageHeader: BfImageHeader): Int {
+    fun mipmap(level: Int): Int {
+        val pixels = bfImageHeader.width * bfImageHeader.height
+        var result = pixels * bfImageHeader.extra.numberOfChannels().toUInt()
+        if (bfImageHeader.flags.dxt()) result /= if (bfImageHeader.extra.numberOfChannels() == 3) 6u else 4u
+        return result.toInt()
+    }
+
+    if (!bfImageHeader.extra.hasMipmaps()) return mipmap(0)
+    var sum = 0
+    for (lvl in 0..bfImageHeader.extra.includedMipmaps()) {
+        sum += mipmap(lvl)
+    }
+    return sum
+}
 
 fun ByteBuffer.writeBfImageHeader(bfImageHeader: BfImageHeader) {
     writeBfHeader(bfImageHeader.header)

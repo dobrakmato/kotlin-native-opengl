@@ -146,8 +146,9 @@ class BfImageTests {
 
         /* prepare the payload */
         val payload = if (header.flags.lz4()) {
-            val uncompressedSize = 2048
-            buffer.readLZ4Decompressed(uncompressedSize, 0).data.rawValue
+            val uncompressedSize = 2048 // compute from header
+            val decompressedSize = 0 // file length - header
+            buffer.readLZ4Decompressed(uncompressedSize, decompressedSize).data.rawValue
         } else {
             buffer.data.rawValue + buffer.pos.toLong()
         }
