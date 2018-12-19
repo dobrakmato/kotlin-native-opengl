@@ -140,5 +140,27 @@ class BfImageTests {
         buffer.free()
     }
 
+    fun `reading bf image file`() {
+        val buffer = ByteBuffer.create(512)
+        val header = buffer.readBfImageHeader()
 
+        /* prepare the payload */
+        val payload = if (header.flags.lz4()) {
+            val uncompressedSize = 2048
+            buffer.readLZ4Decompressed(uncompressedSize, 0).data.rawValue
+        } else {
+            buffer.data.rawValue + buffer.pos.toLong()
+        }
+
+        /* upload the mipmaps */
+        for (i in 0 until header.extra.includedMipmaps()) {
+            val divisor = pow(2.0, i.toDouble()).toInt().toUInt()
+            val width = header.width / divisor
+            val height = header.height / divisor
+            val uncompressedTextureSize = 0
+
+            // upload(payload, width, height, header.format)
+            // payload += uncompressedTextureSize
+        }
+    }
 }

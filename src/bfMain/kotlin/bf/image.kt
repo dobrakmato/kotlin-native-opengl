@@ -92,16 +92,3 @@ fun ByteBuffer.readBfImageFlags(): BfImageFlags = BfImageFlags(readUByte())
 fun ByteBuffer.writeBfImageExtra(extra: BfImageExtra) = writeUByte(extra.value)
 
 fun ByteBuffer.readBfImageExtra(): BfImageExtra = BfImageExtra(readUByte())
-
-/* helper functions for reading the file data */
-class BfImage(private val byteBuffer: ByteBuffer) {
-    val header by lazy {
-        byteBuffer.readBfImageHeader()
-    }
-    private var mipmapIdx = 0
-
-    fun getNextMipmap(): Pair<Int, NativePtr> {
-        if (header.extra.includedMipmaps() <= mipmapIdx) throw IllegalStateException("No more mipmaps in this BfImage!")
-        return Pair(mipmapIdx++, byteBuffer.data.rawValue + byteBuffer.pos.toLong())
-    }
-}
