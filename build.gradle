@@ -7,6 +7,7 @@ repositories {
 }
 
 import org.gradle.internal.os.OperatingSystem
+
 def konanUserDir = System.getenv("KONAN_DATA_DIR") ?: "${System.getProperty("user.home")}/.konan"
 def resFile = file("$buildDir/konan/res/kogin.res")
 
@@ -21,6 +22,15 @@ kotlin {
         fromPreset(presets.mingwX64, 'io')
         fromPreset(presets.mingwX64, 'utils')
         fromPreset(presets.mingwX64, 'bf')
+
+        configure([bf]) {
+            compilations.main {
+                cinterops {
+                    lz4 {
+                    }
+                }
+            }
+        }
 
         /* applications */
         fromPreset(presets.mingwX64, 'mingw')
@@ -89,7 +99,7 @@ kotlin {
         // in gradle.properties file and re-import your project in IDE.
         ioMain {
         }
-        bfMain{
+        bfMain {
             dependsOn ioMain
         }
         bfinfoMain {
