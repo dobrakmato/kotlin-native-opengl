@@ -1,9 +1,6 @@
 package math
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class Vector2Tests {
     @Test
@@ -52,7 +49,7 @@ class Vector2Tests {
 
     @Test
     fun length() {
-        assertTrue(50.1168634f - Vector2f(1.3f, 50.1f).length()  < 0.001f)
+        assertTrue(50.1168634f - Vector2f(1.3f, 50.1f).length() < 0.001f)
     }
 
     @Test
@@ -74,5 +71,17 @@ class Vector2Tests {
         val to = Vector2f(18f, -10f)
         assertTrue(distanceSquared(from, to) > 0)
         assertTrue(714.25 - distanceSquared(from, to) < 0.01f)
+    }
+
+    @Test
+    fun `companion object`() {
+        assertEquals(Vector2f(1f, 0f), Vector2f.UNIT_X)
+        assertEquals(Vector2f(0f, 1f), Vector2f.UNIT_Y)
+        assertEquals(Vector2f(0f, 0f), Vector2f.ZERO)
+        assertEquals(Vector2f(1f, 1f), Vector2f.ONE)
+
+        assertEquals(Vector2f(1f, 4f), Vector2f(1f, 4f))
+        assertNotEquals(Vector2f.RANDOM, Vector2f.RANDOM)
+
     }
 }

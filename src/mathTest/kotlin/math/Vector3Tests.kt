@@ -2,6 +2,7 @@ package math
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class Vector3Tests {
@@ -81,5 +82,38 @@ class Vector3Tests {
         val to = Vector3f(18f, -10f, 22.515f)
         assertTrue(distanceSquared(from, to) > 0)
         assertTrue(782.725625f - distanceSquared(from, to) < 0.01f)
+    }
+
+    @Test
+    fun `companion object`() {
+        assertEquals(Vector3f(1f, 0f, 0f), Vector3f.UNIT_X)
+        assertEquals(Vector3f(0f, 1f, 0f), Vector3f.UNIT_Y)
+        assertEquals(Vector3f(0f, 0f, 1f), Vector3f.UNIT_Z)
+        assertEquals(Vector3f(0f, 0f, 0f), Vector3f.ZERO)
+        assertEquals(Vector3f(1f, 1f, 1f), Vector3f.ONE)
+
+        assertEquals(Vector3f(1f, 4f, -9f), Vector3f(1f, 4f, -9f))
+        assertNotEquals(Vector3f.RANDOM, Vector3f.RANDOM)
+
+    }
+
+    @Test
+    fun `clamp`() {
+
+    }
+
+    @Test
+    fun `lerp`() {
+
+    }
+
+    @Test
+    fun `slerp`() {
+
+    }
+
+    @Test
+    fun `nlerp`() {
+
     }
 }
