@@ -6,5 +6,5 @@ environment:
   BASH_INTERPRETER: C:\msys64\bin\bash.exe
 
 build_script:
-  - gradlew --no-daemon --info --debug buildNativeProjects
-  - gradlew --no-daemon --info --debug build
+  - gradlew --no-daemon --info --debug --stacktrace buildNativeProjects
+  - gradlew --no-daemon --info --debug --stacktrace build

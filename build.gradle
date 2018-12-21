@@ -138,10 +138,10 @@ task generateInterops(type: Copy) {
 }
 
 /* command used to trigger build of native projects from gradle */
-task buildNativeProjects {  
+task buildNativeProjects {
     exec {
         workingDir '.'
-        commandLine "${System.getenv("BASH_INTERPRETER")}", "./build_all.sh"
+        commandLine "bash", "./build_all.sh"
     }
 }
 
