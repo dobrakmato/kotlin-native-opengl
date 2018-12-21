@@ -1,6 +1,7 @@
 
 kotlin-native-opengl
 --------------
+![build status](https://ci.appveyor.com/api/projects/status/go9a25d0kyq6ir7i/branch/master?svg=true)
 Renderer / game engine in Kotlin/Native with use of some native libraries
 written currently only for OpenGL backend. Maybe it will support Vulkan
 sometime in the future. 
