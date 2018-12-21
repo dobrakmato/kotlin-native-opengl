@@ -57,7 +57,6 @@ function check_tool_working {
 check_tool_working "Gradle" "./gradlew -v"
 check_tool_working "gcc" "gcc -v"
 check_tool_working "g++" "g++ -v"
-check_tool_working "make" "make -v"
 check_tool_working "cmake" "cmake --version"
 
 echo "----------------- Building thirdparty projects -----------------"
