@@ -3,6 +3,7 @@ version: 'build #{build}'
 environment:
   JAVA_HOME: C:\Program Files\Java\jdk1.8.0
   NATIVE_TOOLCHAIN: C:\mingw-w64\x86_64-7.3.0-posix-seh-rt_v5-rev0
+  BASH_INTERPRETER: C:\msys64\bin\bash.exe
 
 build_script:
   - gradlew --no-daemon --info buildNativeProjects

@@ -137,12 +137,13 @@ task generateInterops(type: Copy) {
     filter { line -> line.replaceAll('@ROOT@', file('.').toString().replace("\\", "/")) }
 }
 
+/* command used to trigger build of native projects from gradle */
 task buildNativeProjects {
     print("Using toolchain located at: " + System.getenv("NATIVE_TOOLCHAIN"))
     if(System.getenv("NATIVE_TOOLCHAIN") == null) throw new RuntimeException("Native toolchain cannot be null!")
     exec {
         workingDir '.'
-        commandLine "${System.getenv("NATIVE_TOOLCHAIN")}/bin/bash.exe", "./build_all.sh"
+        commandLine "${System.getenv("BASH_INTERPRETER")}", "./build_all.sh"
     }
 }
 
