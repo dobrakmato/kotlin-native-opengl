@@ -20,6 +20,7 @@ echo "JAVA_HOME=$JAVA_HOME"
 export PATH="$JAVA_HOME/bin":$PATH
 export PATH=/c/msys64/mingw32/bin:$PATH
 export PATH=/c/msys64/mingw64/bin:$PATH
+export PATH=$NATIVE_TOOLCHAIN:$PATH
 echo "PATH=$PATH"
 
 # create TEMP dir if not set for gcc
