@@ -138,9 +138,7 @@ task generateInterops(type: Copy) {
 }
 
 /* command used to trigger build of native projects from gradle */
-task buildNativeProjects {
-    print("Using toolchain located at: " + System.getenv("NATIVE_TOOLCHAIN"))
-    if(System.getenv("NATIVE_TOOLCHAIN") == null) throw new RuntimeException("Native toolchain cannot be null!")
+task buildNativeProjects {  
     exec {
         workingDir '.'
         commandLine "${System.getenv("BASH_INTERPRETER")}", "./build_all.sh"
