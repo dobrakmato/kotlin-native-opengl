@@ -138,14 +138,9 @@ task generateInterops(type: Copy) {
 }
 
 /* command used to trigger build of native projects from gradle */
-task buildNativeProjects {
-    def stdout = new ByteArrayOutputStream()
-    exec {
-        workingDir '.'
-        commandLine "bash", "./build_all.sh"
-        standardOutput = stdout
-    }
-    println "Output:\n$stdout"
+task buildNativeProjects(type: Exec) {
+    workingDir '.'
+    commandLine "bash", "./build_native_projects.sh"
 }
 
 task runProgram {

@@ -6,8 +6,6 @@ environment:
   BASH_INTERPRETER: C:\msys64\bin\bash.exe
   JAVA_OPTS: "-Xmx2048M -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512M"
   RADLE_OPTS: "-Dorg.gradle.daemon=true"
-  SKIP_MAIN_BUILD: "true"
 
 build_script:
-  - gradlew --info --stacktrace buildNativeProjects
-  - gradlew --info --stacktrace build
+  - gradlew --info --stacktrace buildNativeProjects generateInterops build

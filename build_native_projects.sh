@@ -112,13 +112,6 @@ build_native_project "stb" "thirdparty/stb/$CMAKE_BUILD_DIR" "../"
 generate_opengl_bindings
 build_native_project "OpenGL bindings" "thirdparty/galogen/build/clib/$CMAKE_BUILD_DIR" "../"
 
-if [[ -z "${SKIP_MAIN_BUILD}" ]]; then
-    echo "--------------------- Building main project --------------------"
-
-    if [ "$SCRIPT_ARG1" == "clean" ]; then ./gradlew clean; fi
-    ./gradlew build
-fi
-
 ELAPSED_TIME=$(($SECONDS - $START_TIME))
 echo "----------------------------------------------------------------"
 echo "Build script finished execution in $(($ELAPSED_TIME/60)) min $(($ELAPSED_TIME%60)) sec!"
