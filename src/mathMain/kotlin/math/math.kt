@@ -147,41 +147,53 @@ inline fun clamp(min: Vector3f, max: Vector3f, value: Vector3f) = Vector3f(
     clamp(min.z, max.z, value.z)
 )
 
-inline fun lerp(min: Vector3f, max: Vector3f, f: Float) = min * (1.0f - f) + max * f
+inline fun lerp(min: Vector3f, max: Vector3f, f: Float): Vector3f {
+    if (f > 1f || f < 0f) throw IllegalArgumentException("Parameter f must be from <0; 1>")
+    return min * (1.0f - f) + max * f
+}
+
 inline fun slerp(min: Vector3f, max: Vector3f, f: Float): Vector3f {
+    if (f > 1f || f < 0f) throw IllegalArgumentException("Parameter f must be from <0; 1>")
     val dot = clamp(-1f, 1f, min dot max)
     val theta = acos(dot) * f
     val relative = (max - (min * dot)).normalized()
     return min * (cos(theta)) + (relative * sin(theta))
 }
 
-inline fun nlerp(min: Vector3f, max: Vector3f, f: Float) = (min * (1.0f - f) + max * f).normalized()
+inline fun nlerp(min: Vector3f, max: Vector3f, f: Float) = lerp(min, max, f).normalized()
 
 /* quaternion classes */
 
 data class Quaternion(val x: Float = 0f, val y: Float = 0f, val z: Float = 0f, val w: Float = 1f) {
 
     inline operator fun plus(rhs: Quaternion) = Quaternion(x + rhs.x, y + rhs.y, z + rhs.z, w + rhs.w)
-    inline operator fun minus(rhs: Quaternion) = Quaternion(x - rhs.x, y - rhs.y, z - rhs.z, w + rhs.w)
 
     inline operator fun times(rhs: Float) = Quaternion(x * rhs, y * rhs, z * rhs, w * rhs)
     inline operator fun times(rhs: Quaternion) = Quaternion(
-        w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z,
         w * rhs.x + x * rhs.w + y * rhs.z - z * rhs.y,
         w * rhs.y + y * rhs.w + z * rhs.x - x * rhs.z,
-        w * rhs.z + z * rhs.w + x * rhs.y - y * rhs.x
+        w * rhs.z + z * rhs.w + x * rhs.y - y * rhs.x,
+        w * rhs.w - x * rhs.x - y * rhs.y - z * rhs.z
     )
 
     companion object {
         val IDENTITY = Quaternion(0f, 0f, 0f, 1f)
 
-        fun fromEuler(pitch: Float, yaw: Float, roll: Float): Quaternion {
-            val cy = cos(yaw * 0.5f)
-            val sy = sin(yaw * 0.5f)
-            val cr = cos(roll * 0.5f)
-            val sr = sin(roll * 0.5f)
-            val cp = cos(pitch * 0.5f)
-            val sp = sin(pitch * 0.5f)
+        fun fromEuler(pitch: Float, yaw: Float, roll: Float) =
+            fromEulerRad(toRadians(pitch), toRadians(yaw), toRadians(roll))
+
+        // Yaw     Pitch   Roll
+        // Heading Pitch   Bank
+        // Y       X       Z
+
+        // pitch (x) yaw (y) roll (z)
+        fun fromEulerRad(pitch: Float, yaw: Float, roll: Float): Quaternion {
+            val cy = cos(roll * 0.5f)
+            val sy = sin(roll * 0.5f)
+            val cr = cos(pitch * 0.5f)
+            val sr = sin(pitch * 0.5f)
+            val cp = cos(yaw * 0.5f)
+            val sp = sin(yaw * 0.5f)
 
             return Quaternion(
                 cy * sr * cp - sy * cr * sp,
@@ -200,6 +212,43 @@ inline fun Quaternion.lengthSquared() = pow2(x) + pow2(y) + pow2(z) + pow2(w)
 inline fun Quaternion.length() = sqrt(lengthSquared())
 inline fun Quaternion.normalized() = this * (1f safediv length())
 inline infix fun Quaternion.dot(rhs: Quaternion) = x * rhs.x + y * rhs.y + z * rhs.z + w * rhs.w
+inline infix fun Quaternion.angle(rhs: Quaternion): Float {
+    val dot = this dot rhs
+    if (dot < 0.0001f) return 0f
+    return acos(min(abs(dot), 1.0F)) * 2.0F
+}
+
+inline fun slerp(min: Quaternion, max: Quaternion, f: Float): Quaternion {
+    // Based on code from:
+    // http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/index.htm
+
+    val cosHalfTheta = min.w * max.w + min.x * max.x + min.y * max.y + min.z * max.z
+
+    if (abs(cosHalfTheta) >= 1.0) {
+        return Quaternion(min.x, min.y, min.z, min.w)
+    }
+
+    val halfTheta = acos(cosHalfTheta)
+    val sinHalfTheta = sqrt(1.0f - cosHalfTheta * cosHalfTheta)
+
+    if (abs(sinHalfTheta) < 0.001) { // fabs is floating point absolute
+        return Quaternion(
+            min.w * 0.5f + max.w * 0.5f,
+            min.x * 0.5f + max.x * 0.5f,
+            min.y * 0.5f + max.y * 0.5f,
+            min.z * 0.5f + max.z * 0.5f
+        )
+    }
+    val ratioA = sin((1 - f) * halfTheta) / sinHalfTheta
+    val ratioB = sin(f * halfTheta) / sinHalfTheta
+
+    return Quaternion(
+        min.x * ratioA + max.x * ratioB,
+        min.y * ratioA + max.y * ratioB,
+        min.z * ratioA + max.z * ratioB,
+        min.w * ratioA + max.w * ratioB
+    )
+}
 
 /* matrix classes */
 

@@ -1,9 +1,6 @@
 package math
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class Vector3Tests {
     @Test
@@ -98,22 +95,66 @@ class Vector3Tests {
     }
 
     @Test
-    fun `clamp`() {
+    fun clamp() {
+        assertEquals(
+            Vector3f(1f, 1f, 1f),
+            clamp(Vector3f.ONE, Vector3f(2f, 2f, 2f), Vector3f(-4f, 0f, -5f))
+        )
 
+        assertEquals(
+            Vector3f(2f, 2f, 2f),
+            clamp(Vector3f.ONE, Vector3f(2f, 2f, 2f), Vector3f(40f, 10f, 4f))
+        )
+
+        assertEquals(
+            Vector3f(1f, 2f, 1.5f),
+            clamp(Vector3f.ONE, Vector3f(2f, 2f, 2f), Vector3f(1f, 2f, 1.5f))
+        )
     }
 
     @Test
-    fun `lerp`() {
+    fun lerp() {
+        assertEquals(Vector3f(0.25f, 0.25f, 0.25f), lerp(Vector3f.ZERO, Vector3f.ONE, 0.25f))
+        assertEquals(Vector3f(0f, 0.25f, 0f), lerp(Vector3f.ZERO, Vector3f.UNIT_Y, 0.25f))
+        assertEquals(Vector3f(0f, 0f, 0f), lerp(Vector3f.ZERO, Vector3f.UNIT_Y, 0f))
+        assertEquals(Vector3f(0f, 1f, 0f), lerp(Vector3f.ZERO, Vector3f.UNIT_Y, 1f))
 
+        assertFails {
+            lerp(Vector3f.ZERO, Vector3f.ONE, -1f)
+        }
+
+        assertFails {
+            lerp(Vector3f.ZERO, Vector3f.ONE, 2f)
+        }
+
+        assertFails {
+            lerp(Vector3f.ZERO, Vector3f.ONE, 1.1f)
+        }
     }
 
     @Test
-    fun `slerp`() {
+    fun slerp() {
+        assertFails {
+            slerp(Vector3f.ZERO, Vector3f.ONE, -1f)
+        }
 
+        assertFails {
+            slerp(Vector3f.ZERO, Vector3f.ONE, 2f)
+        }
+
+        // todo:
     }
 
     @Test
-    fun `nlerp`() {
+    fun nlerp() {
+        assertFails {
+            nlerp(Vector3f.ZERO, Vector3f.ONE, -1f)
+        }
 
+        assertFails {
+            nlerp(Vector3f.ZERO, Vector3f.ONE, 2f)
+        }
+
+        // todo:
     }
 }
