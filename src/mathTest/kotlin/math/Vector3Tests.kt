@@ -95,6 +95,14 @@ class Vector3Tests {
     }
 
     @Test
+    fun angle() {
+        assertEquals(toRadians(90f), Vector3f.UNIT_X angle Vector3f.UNIT_Y)
+        assertEquals(toRadians(90f), Vector3f.UNIT_Y angle Vector3f.UNIT_Z)
+        assertEquals(toRadians(90f), Vector3f.UNIT_X angle Vector3f.UNIT_Z)
+        assertEquals(0f, Vector3f.UNIT_X angle Vector3f.UNIT_X)
+    }
+
+    @Test
     fun clamp() {
         assertEquals(
             Vector3f(1f, 1f, 1f),

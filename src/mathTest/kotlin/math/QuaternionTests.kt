@@ -132,19 +132,17 @@ class QuaternionTests {
 
     @Test
     fun `from euler angles compound`() {
+        val qx = Quaternion.fromEuler(30f, 0f, 0f)
+        val qy = Quaternion.fromEuler(0f, 30f, 0f)
+        val qz = Quaternion.fromEuler(0f, 0f, 45f)
+
         val qCompound = Quaternion.fromEuler(30f, 30f, 45f)
 
-        // Quaternion(x=0.13529903, y=0.32664075, z=0.29516035, w=0.88762635)
-        // Quaternion(x=0.32664073, y=0.32664073, z=0.29516032, w=0.83635634)
-        // Quaternion(x=0.32664073, y=0.13529901, z=0.29516032, w=0.88762623)
-        // Quaternion(x=0.29516035, y=0.32664075, z=0.13529903, w=0.88762635)
-
-        println(qCompound)
-
-        assertEquals(0.4189366968603514f, qCompound.x)
-        assertEquals(0.3266407412190941f, qCompound.y)
-        assertEquals(0.13529902503654923f, qCompound.z)
-        assertEquals(0.8363564096865272f, qCompound.w)
+        assertEquals(0.32664073f, qCompound.x)
+        assertEquals(0.13529901f, qCompound.y)
+        assertEquals(0.4189367f, qCompound.z)
+        assertEquals(0.83635634f, qCompound.w)
+        assertEquals(qx * qy * qz, qCompound)
     }
 
     @Test

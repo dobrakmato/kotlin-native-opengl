@@ -134,6 +134,7 @@ inline fun Vector3f.lengthSquared() = pow2(x) + pow2(y) + pow2(z)
 inline fun Vector3f.length() = sqrt(lengthSquared())
 inline fun Vector3f.normalized() = this * (1f safediv length())
 inline infix fun Vector3f.dot(rhs: Vector3f) = x * rhs.x + y * rhs.y + z * rhs.z
+inline infix fun Vector3f.angle(rhs: Vector3f) = acos(dot(rhs))
 inline infix fun Vector3f.cross(rhs: Vector3f): Vector3f {
     return Vector3f(y * rhs.z - z * rhs.y, z * rhs.x - x * rhs.z, x * rhs.y - y * rhs.x)
 }
@@ -182,25 +183,23 @@ data class Quaternion(val x: Float = 0f, val y: Float = 0f, val z: Float = 0f, v
         fun fromEuler(pitch: Float, yaw: Float, roll: Float) =
             fromEulerRad(toRadians(pitch), toRadians(yaw), toRadians(roll))
 
-        // Yaw     Pitch   Roll
-        // Heading Pitch   Bank
-        // Y       X       Z
+        // Yaw     Pitch       Roll
+        // Heading Elevation/Attitude   Bank
+        // Y       X           Z
 
         // pitch (x) yaw (y) roll (z)
         fun fromEulerRad(pitch: Float, yaw: Float, roll: Float): Quaternion {
-            val cy = cos(roll * 0.5f)
-            val sy = sin(roll * 0.5f)
-            val cr = cos(pitch * 0.5f)
-            val sr = sin(pitch * 0.5f)
-            val cp = cos(yaw * 0.5f)
-            val sp = sin(yaw * 0.5f)
-
-            return Quaternion(
-                cy * sr * cp - sy * cr * sp,
-                cy * cr * sp + sy * sr * cp,
-                sy * cr * cp - cy * sr * sp,
-                cy * cr * cp + sy * sr * sp
-            )
+            val c1 = cos(pitch / 2)
+            val c2 = cos(yaw / 2)
+            val c3 = cos(roll / 2)
+            val s1 = sin(pitch / 2)
+            val s2 = sin(yaw / 2)
+            val s3 = sin(roll / 2)
+            val x = s1 * c2 * c3 + c1 * s2 * s3
+            val y = c1 * s2 * c3 - s1 * c2 * s3
+            val z = c1 * c2 * s3 + s1 * s2 * c3
+            val w = c1 * c2 * c3 - s1 * s2 * s3
+            return Quaternion(x, y, z, w)
         }
     }
 }
@@ -277,6 +276,16 @@ data class Matrix4f(
     inline val backward
         get() = Vector3f(-m13, -m23, -m33)
 
+    /* workaround for compiler bug -0.0f != 0.0f */
+    override fun equals(other: Any?): Boolean {
+        if (other is Matrix4f) {
+            return m11 == other.m11 && m12 == other.m12 && m13 == other.m13 && m14 == other.m14 &&
+                    m21 == other.m21 && m22 == other.m22 && m23 == other.m23 && m24 == other.m24 &&
+                    m31 == other.m31 && m32 == other.m32 && m33 == other.m33 && m34 == other.m34 &&
+                    m41 == other.m41 && m42 == other.m42 && m43 == other.m43 && m44 == other.m44
+        }
+        return false
+    }
 
     inline operator fun times(rhs: Matrix4f): Matrix4f {
         return Matrix4f(
@@ -324,6 +333,15 @@ data class Matrix4f(
 
         return Vector3f(x, y, z)
     }
+
+    override fun toString(): String {
+        return "(" +
+                "$m11, $m12, $m13, $m14\n" +
+                " $m21, $m22, $m23, $m24\n" +
+                " $m31, $m32, $m33, $m34\n" +
+                " $m41, $m42, $m43, $m44)"
+    }
+
 
     companion object {
 
@@ -384,7 +402,7 @@ data class Matrix4f(
             )
         }
 
-        fun createOrthographic(left: Float, right: Float, bottom: Float, top: Float, near: Float, far: Float) =
+        fun createOrthographic(left: Float, right: Float, top: Float, bottom: Float, near: Float, far: Float) =
             Matrix4f(
                 m11 = 2f / (right - left), m14 = -(right + left) / (right - left),
                 m22 = 2f / (top - bottom), m24 = -(top + bottom) / (top - bottom),
