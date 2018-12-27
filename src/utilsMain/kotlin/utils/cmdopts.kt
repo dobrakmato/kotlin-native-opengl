@@ -3,7 +3,7 @@ package utils
 import kotlin.math.max
 
 data class Option(val short: Char, val long: String, val description: String)
-data class Value(val long: String, val description: String, val required: Boolean, val defaultValue: String?)
+data class Value(val long: String, val description: String, val required: Boolean)
 
 class Options {
 
@@ -28,15 +28,15 @@ class Options {
     }
 
     fun requiredValue(long: String, description: String): Options {
-        val value = Value(long, description, true, null)
+        val value = Value(long, description, true)
         values.add(value)
         valueLongNames[long] = value
         longestValueLong = max(longestValueLong, long.length)
         return this
     }
 
-    fun optionalValue(long: String, description: String, defaultValue: String? = null): Options {
-        val value = Value(long, description, false, defaultValue)
+    fun optionalValue(long: String, description: String): Options {
+        val value = Value(long, description, false)
         values.add(value)
         valueLongNames[long] = value
         longestValueLong = max(longestValueLong, long.length)
@@ -114,14 +114,21 @@ class ActualOptions(private val options: Options, private val cmdLine: Array<Str
         return longName in presentValues
     }
 
-    fun getValue(longName: String): String {
+    fun getOptionalValue(longName: String, defaultValue: String): String {
         if (longName.isEmpty()) throw IllegalArgumentException("Empty name is not valid name!")
         if (isValuePresent(longName)) {
             return presentValues[longName]!!
         }
         if (options.hasValue(longName)) {
-            return options.valueLongNames[longName]!!.defaultValue
-                ?: throw IllegalArgumentException("Value $longName is not present and has no default value!")
+            return defaultValue
+        }
+        throw IllegalArgumentException("No value with long-name $longName is defined in options!")
+    }
+
+    fun getValue(longName: String): String {
+        if (longName.isEmpty()) throw IllegalArgumentException("Empty name is not valid name!")
+        if (isValuePresent(longName)) {
+            return presentValues[longName]!!
         }
         throw IllegalArgumentException("No value with long-name $longName is defined in options!")
     }
@@ -177,5 +184,5 @@ class ActualOptions(private val options: Options, private val cmdLine: Array<Str
         }
     }
 
-    fun displayHelp() = options.displayHelp()
+    fun displayHelp(appName: String = "app.exe") = options.displayHelp(appName)
 }

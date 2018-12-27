@@ -76,6 +76,7 @@ class CommandLineOptionsTest {
         assertTrue(actual.isOptionPresent("srgb"))
         assertTrue(actual.isValuePresent("input-file"))
         assertEquals("test", actual.getValue("input-file"))
+        assertEquals("testo", actual.getOptionalValue("output-file", "testo"))
         assertFails {
             actual.getValue("output-file")
         }
@@ -95,5 +96,6 @@ class CommandLineOptionsTest {
         assertTrue(actual.isValuePresent("input-file"))
         assertEquals("test", actual.getValue("input-file"))
         assertEquals("kotlin", actual.getValue("output-file"))
+        assertEquals("kotlin", actual.getOptionalValue("output-file", ""))
     }
 }
