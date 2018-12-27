@@ -194,12 +194,36 @@ class MatrixTests {
         assertEquals(Vector3f.UNIT_Z, m.forward)
         assertEquals(-Vector3f.UNIT_Z, m.backward)
 
-        // todo: non-basic
+        val m2 = Matrix4f() * Matrix4f.createRotationFromQuaternion(Quaternion.fromEuler(90f, 0f, 0f))
+        assertEquals(Vector3f.UNIT_X, m2.right)
+        assertEquals(-Vector3f.UNIT_X, m2.left)
+        assertTrue((Vector3f.UNIT_Y - m2.forward).length() < 0.001f)
+        assertTrue((-Vector3f.UNIT_Y - m2.backward).length() < 0.001f)
+        assertTrue((-Vector3f.UNIT_Z - m2.up).length() < 0.001f)
+        assertTrue((Vector3f.UNIT_Z - m2.down).length() < 0.001f)
+
+        val m3 = Matrix4f() * Matrix4f.createRotationFromQuaternion(Quaternion.fromEuler(0f, 90f, 0f))
+        assertEquals(Vector3f.UNIT_Y, m3.up)
+        assertEquals(-Vector3f.UNIT_Y, m3.down)
+
+        val m4 = Matrix4f() * Matrix4f.createRotationFromQuaternion(Quaternion.fromEuler(0f, 0f, 90f))
+        assertEquals(Vector3f.UNIT_Z, m4.forward)
+        assertEquals(-Vector3f.UNIT_Z, m4.backward)
     }
 
     @Test
-    fun `create rotation from quaternion`() {
-
+    fun `create rotation matrix from quaternion`() {
+        val m = Matrix4f.createRotationFromQuaternion(Quaternion(4f, 3f, 2f, 0f))
+        assertTrue(
+            matApproxEqual(
+                Matrix4f(
+                    (3 / 29f), (24 / 29f), (16 / 29f), 0f,
+                    (24 / 29f), (-11 / 29f), (12 / 29f), 0f,
+                    (16 / 29f), (12 / 29f), (-21 / 29f), 0f,
+                    0f, 0f, 0f, 1f
+                ), m
+            )
+        )
     }
 
     @Test
@@ -271,20 +295,6 @@ class MatrixTests {
     }
 
     @Test
-    fun `create perspective deeper view frustrum`() {
-        assertTrue(
-            matApproxEqual(
-                Matrix4f(
-                    2f, 0f, 0f, 0f,
-                    0f, 1f, 0f, 0f,
-                    0f, 0f, -0.5f, 2f,
-                    0f, 0f, -1f, 0f
-                ), Matrix4f.createPerspective(atan(1f) * 2f, 1f, -2f, 2f)
-            )
-        )
-    }
-
-    @Test
     fun `create orthographic`() {
         assertTrue(
             matApproxEqual(
@@ -293,7 +303,7 @@ class MatrixTests {
                     0f, 1f, 0f, -1f,
                     0f, 0f, 1f, 1f,
                     0f, 0f, 0f, 1f
-                ), Matrix4f.createOrthographic(0f, 2f, 0f, 2f, 2f, 0f)
+                ), Matrix4f.createOrthographic(0f, 2f, 2f, 0f, 2f, 0f)
             )
         )
     }

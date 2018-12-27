@@ -368,7 +368,7 @@ data class Matrix4f(
                 0f,
                 2 * x * z - 2 * w * y,
                 2 * y * z - 2 * w * x,
-                1 - 2 * x * x - y * y,
+                1 - 2 * x * x - 2 * y * y,
                 0f,
                 0f, 0f, 0f, 1f
             )
@@ -391,9 +391,9 @@ data class Matrix4f(
         }
 
         fun createPerspective(verticalFov: Float, ratio: Float, near: Float, far: Float): Matrix4f {
-            val tanFov2 = tan(verticalFov / 2f)
+            val tanFov2 = tan(verticalFov * 0.5f)
             return Matrix4f(
-                m11 = 1f / ratio * tanFov2,
+                m11 = 1f / (ratio * tanFov2),
                 m22 = 1 / tanFov2,
                 m33 = -(far + near) / (far - near),
                 m34 = -(2f * far * near) / (far - near),
@@ -489,3 +489,4 @@ inline val Color3f.g
     get() = y
 inline val Color3f.b
     get() = z
+
