@@ -1,5 +1,5 @@
 plugins {
-    id 'kotlin-multiplatform' version '1.3.0'
+    id 'kotlin-multiplatform' version '1.3.11'
 }
 repositories {
     maven { url 'http://dl.bintray.com/kotlin/kotlin-eap' }
@@ -22,7 +22,7 @@ kotlin {
         fromPreset(presets.mingwX64, 'io')
         fromPreset(presets.mingwX64, 'utils')
         fromPreset(presets.mingwX64, 'bf')
-
+        
         configure([bf]) {
             compilations.main {
                 cinterops {
