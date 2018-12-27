@@ -1,5 +1,8 @@
-package math
+package math.performance
 
+import math.Vector3f
+import math.dot
+import math.normalized
 import kotlin.system.getTimeMillis
 import kotlin.test.*
 

@@ -30,12 +30,14 @@ import kotlin.random.Random
  */
 /* scalar constants */
 const val PI = 3.1415926536f
+const val SQUARED_PI = PI * PI
 const val HALF_PI = PI * 0.5f
 const val TWO_PI = PI * 2.0f
 const val FOUR_PI = PI * 4.0f
 const val INV_PI = 1.0f / PI
 const val INV_TWO_PI = INV_PI * 0.5f
 const val INV_FOUR_PI = INV_PI * 0.25f
+const val SQRT_OF_TWO = 1.41421356237f
 
 /* scalar functions */
 inline fun clamp(min: Double, max: Double, value: Double) = if (value > max) max else if (value < min) min else value
@@ -276,7 +278,7 @@ data class Matrix4f(
     inline val backward
         get() = Vector3f(-m13, -m23, -m33)
 
-    /* workaround for compiler bug -0.0f != 0.0f */
+    /* workaround for -0.0f != 0.0f */
     override fun equals(other: Any?): Boolean {
         if (other is Matrix4f) {
             return m11 == other.m11 && m12 == other.m12 && m13 == other.m13 && m14 == other.m14 &&
