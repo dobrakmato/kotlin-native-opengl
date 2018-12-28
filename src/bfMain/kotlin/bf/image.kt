@@ -2,13 +2,12 @@ package bf
 
 import io.ByteBuffer
 import platform.posix.pow
-import kotlin.math.max
 
 /* image flags */
 typealias BfImageFlag = UByte
 
 const val BF_IMAGE_FLAG_LZ4: BfImageFlag = 1u
-const val BF_IMAGE_FLAG_LZ4_HC: BfImageFlag = 2u
+const val BF_IMAGE_FLAG_UNUSED: BfImageFlag = 2u
 const val BF_IMAGE_FLAG_DXT: BfImageFlag = 4u
 const val BF_IMAGE_FLAG_FLOAT: BfImageFlag = 8u
 const val BF_IMAGE_FLAG_16_BIT: BfImageFlag = 16u
@@ -19,7 +18,7 @@ const val BF_IMAGE_FLAG_SKYBOX: BfImageFlag = 128u
 /* image data structures */
 inline class BfImageFlags(val value: UByte) {
     inline fun lz4() = (value and BF_IMAGE_FLAG_LZ4) == BF_IMAGE_FLAG_LZ4
-    inline fun lz4hc() = (value and BF_IMAGE_FLAG_LZ4_HC) == BF_IMAGE_FLAG_LZ4_HC
+    inline fun unused1() = (value and BF_IMAGE_FLAG_UNUSED) == BF_IMAGE_FLAG_UNUSED
     inline fun dxt() = (value and BF_IMAGE_FLAG_DXT) == BF_IMAGE_FLAG_DXT
     inline fun float() = (value and BF_IMAGE_FLAG_FLOAT) == BF_IMAGE_FLAG_FLOAT
     inline fun is16bit() = (value and BF_IMAGE_FLAG_16_BIT) == BF_IMAGE_FLAG_16_BIT

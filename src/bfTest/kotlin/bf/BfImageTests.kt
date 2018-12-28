@@ -2,7 +2,6 @@ package bf
 
 import io.ByteBuffer
 import io.free
-import kotlinx.cinterop.get
 import platform.posix.pow
 import kotlin.test.*
 
@@ -125,22 +124,22 @@ class BfImageTests {
         val ref1 = BfImageFlags.create()
             .with(BF_IMAGE_FLAG_VERTICAL_FLIP)
             .with(BF_IMAGE_FLAG_GAMMA_SRGB)
-            .with(BF_IMAGE_FLAG_LZ4_HC)
+            .with(BF_IMAGE_FLAG_UNUSED)
             .with(BF_IMAGE_FLAG_FLOAT)
         val ref2 = BfImageFlags.create()
             .with(BF_IMAGE_FLAG_LZ4)
-            .with(BF_IMAGE_FLAG_LZ4_HC)
+            .with(BF_IMAGE_FLAG_UNUSED)
             .with(BF_IMAGE_FLAG_DXT)
 
         assertTrue(ref1.verticallyFlipped())
         assertTrue(ref1.srgb())
-        assertTrue(ref1.lz4hc())
+        assertTrue(ref1.unused1())
         assertTrue(ref1.float())
         assertFalse(ref1.lz4())
         assertFalse(ref1.dxt())
 
         assertTrue(ref2.lz4())
-        assertTrue(ref2.lz4hc())
+        assertTrue(ref2.unused1())
         assertTrue(ref2.dxt())
         assertFalse(ref2.srgb())
         assertFalse(ref2.is16bit())
@@ -153,11 +152,11 @@ class BfImageTests {
         val ref1 = BfImageFlags.create()
             .with(BF_IMAGE_FLAG_VERTICAL_FLIP)
             .with(BF_IMAGE_FLAG_GAMMA_SRGB)
-            .with(BF_IMAGE_FLAG_LZ4_HC)
+            .with(BF_IMAGE_FLAG_UNUSED)
             .with(BF_IMAGE_FLAG_FLOAT)
         val ref2 = BfImageFlags.create()
             .with(BF_IMAGE_FLAG_LZ4)
-            .with(BF_IMAGE_FLAG_LZ4_HC)
+            .with(BF_IMAGE_FLAG_UNUSED)
             .with(BF_IMAGE_FLAG_DXT)
 
         buffer.writeBfImageFlags(ref1)
