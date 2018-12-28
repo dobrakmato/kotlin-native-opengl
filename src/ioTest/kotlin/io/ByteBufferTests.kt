@@ -355,6 +355,8 @@ class ByteBufferTests {
         buffer.writeString("kotlin")
         buffer.writeFloat(3.14f)
         buffer.writeBytes(buffer2.pointerTo(0), 4 + 4 + 8)
+        buffer.writeFloat(7815.1478f)
+        buffer.writeString("helo")
 
         buffer.pos = 0
 
@@ -365,8 +367,10 @@ class ByteBufferTests {
         buffer.readBytes(buffer3.pointerTo(0), 4 + 4 + 8)
 
         for (i in 0 until (4 + 4 + 8)) {
-            assertEquals(buffer3.uByteAt(i), buffer.uByteAt(buffer.pos + i))
+            assertEquals(buffer3.uByteAt(i), buffer.uByteAt(buffer.pos - (4 + 4 + 8) + i))
         }
+        assertEquals(7815.1478f, buffer.readFloat())
+        assertEquals("helo", buffer.readString())
 
         buffer.free()
     }

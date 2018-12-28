@@ -196,11 +196,13 @@ data class ByteBuffer(val size: Long, val data: CArrayPointer<UByteVar>) {
     inline fun writeBytes(src: CArrayPointer<UByteVar>, length: Int) {
         checkBounds(pos + length - 1)
         memcpy(pointerToPosition(), src, length.toULong())
+        pos += length
     }
 
     inline fun readBytes(dest: CArrayPointer<UByteVar>, length: Int) {
         checkBounds(pos + length -1)
         memcpy(dest, pointerToPosition(), length.toULong())
+        pos += length
     }
 
     inline fun pointerTo(index: Int): CPointer<UByteVarOf<UByte>> {
