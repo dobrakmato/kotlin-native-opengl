@@ -9,6 +9,11 @@ import kotlin.test.assertFails
 class BfGeneralTests {
 
     @Test
+    fun `header byte size`() {
+        assertEquals(Int.SIZE_BYTES + UByte.SIZE_BYTES + UByte.SIZE_BYTES, BfHeader.SIZE_BYTES)
+    }
+
+    @Test
     fun `writing and reding bf file type`() {
         val buffer = ByteBuffer.create(20)
         buffer.writeBfFileType(BfFileType.SCENE)

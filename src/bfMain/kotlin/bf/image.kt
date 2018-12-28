@@ -1,6 +1,7 @@
 package bf
 
 import io.ByteBuffer
+import platform.posix.pow
 import kotlin.math.max
 
 /* image flags */
@@ -27,6 +28,11 @@ inline class BfImageFlags(val value: UByte) {
     inline fun skybox() = (value and BF_IMAGE_FLAG_SKYBOX) == BF_IMAGE_FLAG_SKYBOX
 
     companion object {
+        inline val SIZE_BYTES: Int
+            get() {
+                return 1
+            }
+
         fun create() = BfImageFlags(0u)
     }
 }
@@ -35,10 +41,15 @@ fun BfImageFlags.with(flag: UByte) = BfImageFlags(this.value or flag)
 
 inline class BfImageExtra(val value: UByte) { // [_ _ _ _] mipmap levels [_] inline mipmaps [_ _ _] channels
     inline fun hasMipmaps() = (value and 8u) == 8u.toUByte()
-    inline fun includedMipmaps() = max(((value and 0b11110000u).toUInt() shr 4).toInt(), 1)
+    inline fun includedMipmaps() = ((value and 0b11110000u).toUInt() shr 4).toInt()
     inline fun numberOfChannels() = (value and 0b00000111u).toInt()
 
     companion object {
+        inline val SIZE_BYTES: Int
+            get() {
+                return 1
+            }
+
         fun create(numberOfChannels: Int, includedMipmaps: Int): BfImageExtra {
             if (numberOfChannels <= 0 || numberOfChannels > 4) throw IllegalArgumentException("Invalid number of channels. $numberOfChannels is not from (0; 4>")
             if (includedMipmaps < 0 || includedMipmaps > 15) throw IllegalArgumentException("Invalid number of mipmaps. $includedMipmaps is not from <0; 15>")
@@ -63,21 +74,33 @@ data class BfImageHeader(
 
     val width: UShort,
     val height: UShort
-)
+) {
+    companion object {
+        inline val SIZE_BYTES: Int
+            get() {
+                return BfHeader.SIZE_BYTES + BfImageFlags.SIZE_BYTES + BfImageExtra.SIZE_BYTES + 2 + 2
+            }
+    }
 
-// todo: tests
+}
+
 fun computeBfImagePayloadSize(bfImageHeader: BfImageHeader): Int {
+    /*
+     * 1 = original
+     * 2 = half size
+     * 3 = quarter size
+     */
     fun mipmap(level: Int): Int {
-        val pixels = bfImageHeader.width * bfImageHeader.height
+        val pixels = (bfImageHeader.width / (level.toUInt())) * (bfImageHeader.height / (level.toUInt()))
         var result = pixels * bfImageHeader.extra.numberOfChannels().toUInt()
         if (bfImageHeader.flags.dxt()) result /= if (bfImageHeader.extra.numberOfChannels() == 3) 6u else 4u
         return result.toInt()
     }
 
-    if (!bfImageHeader.extra.hasMipmaps()) return mipmap(0)
+    if (!bfImageHeader.extra.hasMipmaps()) return mipmap(1)
     var sum = 0
     for (lvl in 0..bfImageHeader.extra.includedMipmaps()) {
-        sum += mipmap(lvl)
+        sum += mipmap(pow(2.0, lvl.toDouble()).toInt())
     }
     return sum
 }

@@ -10,7 +10,14 @@ data class BfHeader(
     val magic: Int = BF_MAGIC,
     val version: UByte = BF_VERSION,
     val fileType: BfFileType
-)
+) {
+    companion object {
+        val SIZE_BYTES: Int
+            get() {
+                return 4 + 1 + 1
+            }
+    }
+}
 
 fun ByteBuffer.writeBfHeader(bfHeader: BfHeader) {
     writeInt(bfHeader.magic)
