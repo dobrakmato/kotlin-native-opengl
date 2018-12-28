@@ -374,4 +374,37 @@ class ByteBufferTests {
 
         buffer.free()
     }
+
+    @Test
+    fun `buffer view`() {
+        val buffer = ByteBuffer.create(256)
+
+        buffer.writeInt(4)
+        buffer.writeInt(12)
+        buffer.writeInt(-10)
+        buffer.writeInt(40)
+
+        val buffer2 = buffer.slice(0, 8)
+
+        assertEquals(4, buffer2.readInt())
+        assertEquals(12, buffer2.readInt())
+        assertFails {
+            buffer2.readInt()
+        }
+
+        val buffer3 = buffer.slice(4, 12)
+        assertEquals(12, buffer3.readInt())
+        assertEquals(-10, buffer3.readInt())
+        assertFails {
+            buffer3.readInt()
+        }
+
+        /* test propagate back to original */
+        buffer3.pos = 0
+        buffer3.writeInt(88)
+
+        buffer.pos = 0
+        assertEquals(4, buffer.readInt())
+        assertEquals(88, buffer.readInt())
+    }
 }

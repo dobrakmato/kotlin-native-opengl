@@ -200,7 +200,7 @@ data class ByteBuffer(val size: Long, val data: CArrayPointer<UByteVar>) {
     }
 
     inline fun readBytes(dest: CArrayPointer<UByteVar>, length: Int) {
-        checkBounds(pos + length -1)
+        checkBounds(pos + length - 1)
         memcpy(dest, pointerToPosition(), length.toULong())
         pos += length
     }
@@ -211,6 +211,14 @@ data class ByteBuffer(val size: Long, val data: CArrayPointer<UByteVar>) {
     }
 
     inline fun pointerToPosition() = pointerTo(pos)
+
+    /**
+     * Returns a view to this buffer.
+     */
+    inline fun slice(startInclusive: Int, endExclusive: Int): ByteBuffer {
+        val size = endExclusive - startInclusive
+        return ByteBuffer(size.toLong(), pointerTo(startInclusive))
+    }
 
     companion object {
         inline fun create(bytes: Long): ByteBuffer {
