@@ -185,12 +185,22 @@ data class ByteBuffer(val size: Long, val data: CArrayPointer<UByteVar>) {
         checkBounds(pos + size - 1) // check the position of last byte
         val utf8 = ByteArray(size)
 
-        val src = (data + pos.toLong())
+        val src = pointerToPosition()
         val dst = utf8.refTo(0)
         memcpy(dst, src, size.toULong())
         pos += size
 
         return utf8.stringFromUtf8()
+    }
+
+    inline fun writeBytes(src: CArrayPointer<UByteVar>, length: Int) {
+        checkBounds(pos + length - 1)
+        memcpy(pointerToPosition(), src, length.toULong())
+    }
+
+    inline fun readBytes(dest: CArrayPointer<UByteVar>, length: Int) {
+        checkBounds(pos + length -1)
+        memcpy(dest, pointerToPosition(), length.toULong())
     }
 
     inline fun pointerTo(index: Int): CPointer<UByteVarOf<UByte>> {

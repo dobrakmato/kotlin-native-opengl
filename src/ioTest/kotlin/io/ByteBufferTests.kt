@@ -343,4 +343,31 @@ class ByteBufferTests {
 
         buffer.free()
     }
+
+    @Test
+    fun `read and write raw bytes`() {
+        val buffer = ByteBuffer.create(256)
+        val buffer2 = ByteBuffer.create(256)
+        buffer2.writeInt(42)
+        buffer2.writeFloat(1.42f)
+        buffer2.writeDouble(1.42123)
+
+        buffer.writeString("kotlin")
+        buffer.writeFloat(3.14f)
+        buffer.writeBytes(buffer2.pointerTo(0), 4 + 4 + 8)
+
+        buffer.pos = 0
+
+        assertEquals("kotlin", buffer.readString())
+        assertEquals(3.14f, buffer.readFloat())
+
+        val buffer3 = ByteBuffer.create(256)
+        buffer.readBytes(buffer3.pointerTo(0), 4 + 4 + 8)
+
+        for (i in 0 until (4 + 4 + 8)) {
+            assertEquals(buffer3.uByteAt(i), buffer.uByteAt(buffer.pos + i))
+        }
+
+        buffer.free()
+    }
 }
