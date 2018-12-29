@@ -2,9 +2,8 @@
 kotlin-native-opengl
 --------------
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/fc0edc929db34aee98a2a7606c46b925)](https://app.codacy.com/app/dobrakmato/kotlin-native-opengl?utm_source=github.com&utm_medium=referral&utm_content=dobrakmato/kotlin-native-opengl&utm_campaign=Badge_Grade_Dashboard)
-
 ![build status](https://ci.appveyor.com/api/projects/status/go9a25d0kyq6ir7i/branch/master?svg=true)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/fc0edc929db34aee98a2a7606c46b925)](https://app.codacy.com/app/dobrakmato/kotlin-native-opengl?utm_source=github.com&utm_medium=referral&utm_content=dobrakmato/kotlin-native-opengl&utm_campaign=Badge_Grade_Dashboard)
 
 Renderer / game engine in Kotlin/Native with use of some native libraries.
 Currently has only the OpenGL backend. Maybe it will support Vulkan
