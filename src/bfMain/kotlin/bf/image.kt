@@ -50,7 +50,7 @@ inline class BfImageExtra(val value: UByte) { // [_ _ _ _] mipmap levels [_] inl
 
         fun create(numberOfChannels: Int, includedMipmaps: Int): BfImageExtra {
             if (numberOfChannels <= 0 || numberOfChannels > 4) throw IllegalArgumentException("Invalid number of channels. $numberOfChannels is not from (0; 4>")
-            if (includedMipmaps < 0 || includedMipmaps > 15) throw IllegalArgumentException("Invalid number of mipmaps. $includedMipmaps is not from <0; 15>")
+            if (includedMipmaps <= 0 || includedMipmaps > 15) throw IllegalArgumentException("Invalid number of mipmaps. $includedMipmaps is not from (0; 15>")
 
             var result = 0u
 

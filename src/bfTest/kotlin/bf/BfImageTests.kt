@@ -24,7 +24,7 @@ class BfImageTests {
                 BfImageHeader(
                     BfHeader(fileType = BfFileType.IMAGE),
                     BfImageFlags.create(),
-                    BfImageExtra.create(3, 0),
+                    BfImageExtra.create(3, 1),
                     128u,
                     128u
                 )
@@ -36,7 +36,7 @@ class BfImageTests {
                 BfImageHeader(
                     BfHeader(fileType = BfFileType.IMAGE),
                     BfImageFlags.create().with(BF_IMAGE_FLAG_LZ4),
-                    BfImageExtra.create(3, 2),
+                    BfImageExtra.create(3, 3),
                     128u,
                     128u
                 )
@@ -48,7 +48,7 @@ class BfImageTests {
                 BfImageHeader(
                     BfHeader(fileType = BfFileType.IMAGE),
                     BfImageFlags.create().with(BF_IMAGE_FLAG_DXT),
-                    BfImageExtra.create(3, 0),
+                    BfImageExtra.create(3, 1),
                     128u,
                     128u
                 )
@@ -60,7 +60,7 @@ class BfImageTests {
     fun `bf image extra`() {
         val bfImageExtra1 = BfImageExtra.create(3, 8)
         val bfImageExtra2 = BfImageExtra.create(1, 15)
-        val bfImageExtra3 = BfImageExtra.create(2, 0)
+        val bfImageExtra3 = BfImageExtra.create(2, 2)
         val bfImageExtra4 = BfImageExtra.create(4, 1)
         assertEquals(3, bfImageExtra1.numberOfChannels())
         assertEquals(8, bfImageExtra1.includedMipmaps())
@@ -69,10 +69,18 @@ class BfImageTests {
         assertEquals(15, bfImageExtra2.includedMipmaps())
 
         assertEquals(2, bfImageExtra3.numberOfChannels())
-        assertEquals(0, bfImageExtra3.includedMipmaps())
+        assertEquals(2, bfImageExtra3.includedMipmaps())
 
         assertEquals(4, bfImageExtra4.numberOfChannels())
         assertEquals(1, bfImageExtra4.includedMipmaps())
+
+        assertFails {
+            BfImageExtra.create(2, 0)
+        }
+
+        assertFails {
+            BfImageExtra.create(0, 2)
+        }
     }
 
     @Test
