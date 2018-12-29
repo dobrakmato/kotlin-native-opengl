@@ -94,7 +94,7 @@ fun main(args: Array<String>) {
     // ---- texture ----
 
     val texture = AssetLoader
-        .getAsset<Texture>("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\sprites\\TexturesCom_Pavement_TerracottaAntique_4K_albedo.bf")
+        .getAsset<Texture>("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\sprites\\kogin.bf")
 
     println("textures ready")
 

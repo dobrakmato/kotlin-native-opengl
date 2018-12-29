@@ -1,12 +1,13 @@
 package sample
 
-import bfinfo.BFImageHeader
-import bfinfo.BF_HEADER_IMAGE_SIZE
+import bf.BfImageHeader
+import bf.computeBfImagePayloadSize
+import bf.readBfImageHeader
+import bf.readLZ4Decompressed
 import bfinfo.BF_MAGIC
-import bfinfo.readBFHeader
 import galogen.*
+import io.ByteBuffer
 import kotlinx.cinterop.*
-import lz4.LZ4_decompress_safe
 import platform.opengl32.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
 import platform.opengl32.GL_COMPRESSED_RGB_S3TC_DXT1_EXT
 import platform.opengl32.GL_R
@@ -37,7 +38,7 @@ object AssetLoader {
 
         // delegate to specific loader
         when (fileType.toInt()) {
-            1 -> BFTextureLoader.load(asset as Asset<Texture>, data, size)
+            1 -> BFTextureLoaderVersion2TEST.load(asset as Asset<Texture>, data, size)
             else -> throw RuntimeException("Loading of type $fileType is not yet supported!")
         }
 
@@ -58,10 +59,10 @@ interface SpecializedAssetLoader<T> {
 
 /* texture specialized loading */
 
-object BFTextureLoader : SpecializedAssetLoader<Texture> {
-    private val log = Logger("BFTextureLoader")
+object BFTextureLoaderVersion2TEST : SpecializedAssetLoader<Texture> {
+    private val log = Logger("BFTextureLoaderVersion2TEST")
 
-    private val BFImageHeader.glInternalFormat: Int
+    private val BfImageHeader.glInternalFormat: Int
         get() {
             if (flags.srgb()) {
                 return when (extra.numberOfChannels()) {
@@ -82,7 +83,7 @@ object BFTextureLoader : SpecializedAssetLoader<Texture> {
             }
         }
 
-    private val BFImageHeader.glCompressedFormat: Int
+    private val BfImageHeader.glCompressedFormat: Int
         get() {
             if (!flags.dxt()) {
                 throw RuntimeException("Accessing compressed format of uncompressed texture!")
@@ -95,7 +96,7 @@ object BFTextureLoader : SpecializedAssetLoader<Texture> {
             }
         }
 
-    private val BFImageHeader.glFormat: Int
+    private val BfImageHeader.glFormat: Int
         get() {
             return when (extra.numberOfChannels()) {
                 1 -> GL_R
@@ -106,7 +107,7 @@ object BFTextureLoader : SpecializedAssetLoader<Texture> {
             }
         }
 
-    private val BFImageHeader.glType: Int
+    private val BfImageHeader.glType: Int
         get() {
             return if (flags.float()) {
                 GL_FLOAT
@@ -116,24 +117,33 @@ object BFTextureLoader : SpecializedAssetLoader<Texture> {
         }
 
     override fun load(asset: Asset<Texture>, data: FileData, dataSize: Int) {
-        val header = readBFHeader(data.reinterpret())
-        val dataPointer = skipHeader(data)
+        val buffer = ByteBuffer(dataSize.toLong(), data)
+        val header = buffer.readBfImageHeader()
 
         /* DEBUG */
-        log.debug("bf magic: ${header.magic}")
-        log.debug("bf version: ${header.version}")
-        log.debug("bf file type: ${header.fileType}")
+        log.debug("bf magic: ${header.header.magic}")
+        log.debug("bf version: ${header.header.version}")
+        log.debug("bf file type: ${header.header.fileType}")
         log.debug("bf flags lz4: ${header.flags.lz4()}")
-        log.debug("bf flags lz4hc: ${header.flags.lz4hc()}")
         log.debug("bf flags vflip: ${header.flags.verticallyFlipped()}")
         log.debug("bf flags dxt: ${header.flags.dxt()}")
-        log.debug("bf has mipmaps: ${header.extra.hasMipmaps()}")
+        log.debug("bf mipmaps: ${header.extra.includedMipmaps()}")
         log.debug("bf channels: ${header.extra.numberOfChannels()}")
         log.debug("bf width: ${header.width}")
         log.debug("bf height: ${header.height}")
-        log.debug("bf uncompressed size: ${header.uncompressedSize}")
+        log.debug("(computed) header size: ${BfImageHeader.SIZE_BYTES}")
+        log.debug("(computed) uncompressed size: ${computeBfImagePayloadSize(header)}")
+        log.debug("(computed) real bytes left: ${dataSize - BfImageHeader.SIZE_BYTES}")
 
-        val realDataPointer = decompressIfNeeded(header, dataPointer, sizeWithoutHeader(dataSize))
+
+        /* prepare the payload */
+        val payload: CArrayPointer<UByteVar> = if (header.flags.lz4()) {
+            val compressedSize = dataSize - BfImageHeader.SIZE_BYTES
+            val decompressedSize = computeBfImagePayloadSize(header)
+            buffer.readLZ4Decompressed(compressedSize, decompressedSize).data
+        } else {
+            (buffer.data + buffer.pos.toLong())!!
+        }
 
         val texture = Texture()
         texture.label = "Texture for ${asset.path}"
@@ -144,7 +154,7 @@ object BFTextureLoader : SpecializedAssetLoader<Texture> {
             val c = header.extra.numberOfChannels()
             val size = if (c == 3) (w * h * 3) / 6 else (w * h * 4) / 4
             texture.createStorage(header.extra.includedMipmaps(), header.glCompressedFormat, w, h)
-            texture.uploadCompressedMipmap(0, w, h, header.glCompressedFormat, size, realDataPointer)
+            texture.uploadCompressedMipmap(0, w, h, header.glCompressedFormat, size, payload)
         } else {
             texture.createStorage(
                 header.extra.includedMipmaps(), header.glInternalFormat,
@@ -152,7 +162,7 @@ object BFTextureLoader : SpecializedAssetLoader<Texture> {
             )
             texture.uploadMipmap(
                 0, header.width.toInt(), header.height.toInt(),
-                header.glFormat, header.glType, realDataPointer
+                header.glFormat, header.glType, payload
             )
         }
 
@@ -168,42 +178,7 @@ object BFTextureLoader : SpecializedAssetLoader<Texture> {
 
         /* Only free if we allocated more space. */
         if (header.flags.lz4()) {
-            nativeHeap.free(realDataPointer)
+            nativeHeap.free(payload)
         }
-    }
-
-    private fun decompressIfNeeded(
-        header: BFImageHeader,
-        @Mallocated dataPointer: CArrayPointer<UByteVar>,
-        sizeWithoutHeader: Int
-    ): @Mallocated CArrayPointer<UByteVar> {
-        if (header.flags.lz4()) {
-            return decompress(header.uncompressedSize, dataPointer, sizeWithoutHeader)
-        }
-        return dataPointer
-    }
-
-    private fun decompress(
-        uncompressedSize: Int,
-        compressedData: CArrayPointer<UByteVar>,
-        sizeWithoutHeader: Int
-    ): CArrayPointer<UByteVar> {
-        val decompressed = nativeHeap.allocArray<UByteVar>(uncompressedSize)
-        LZ4_decompress_safe(
-            compressedData.reinterpret(),
-            decompressed.reinterpret(),
-            sizeWithoutHeader,
-            uncompressedSize
-        )
-        return decompressed
-    }
-
-    private fun sizeWithoutHeader(size: Int): Int {
-        return size - BF_HEADER_IMAGE_SIZE
-    }
-
-    private fun skipHeader(contents: CPointer<UByteVar>): CPointer<UByteVar> {
-        return ((contents.toLong() + BF_HEADER_IMAGE_SIZE).toCPointer())
-            ?: throw RuntimeException("Null pointer exception")
     }
 }
