@@ -39,7 +39,6 @@ inline class BfImageFlags(val value: UByte) {
 fun BfImageFlags.with(flag: UByte) = BfImageFlags(this.value or flag)
 
 inline class BfImageExtra(val value: UByte) { // [_ _ _ _] mipmap levels [_] inline mipmaps [_ _ _] channels
-    inline fun hasMipmaps() = (value and 8u) == 8u.toUByte()
     inline fun includedMipmaps() = ((value and 0b11110000u).toUInt() shr 4).toInt()
     inline fun numberOfChannels() = (value and 0b00000111u).toInt()
 
@@ -96,9 +95,8 @@ fun computeBfImagePayloadSize(bfImageHeader: BfImageHeader): Int {
         return result.toInt()
     }
 
-    if (!bfImageHeader.extra.hasMipmaps()) return mipmap(1)
     var sum = 0
-    for (lvl in 0..bfImageHeader.extra.includedMipmaps()) {
+    for (lvl in 0 until bfImageHeader.extra.includedMipmaps()) {
         sum += mipmap(pow(2.0, lvl.toDouble()).toInt())
     }
     return sum

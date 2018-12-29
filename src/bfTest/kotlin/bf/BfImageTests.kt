@@ -63,19 +63,15 @@ class BfImageTests {
         val bfImageExtra3 = BfImageExtra.create(2, 0)
         val bfImageExtra4 = BfImageExtra.create(4, 1)
         assertEquals(3, bfImageExtra1.numberOfChannels())
-        assertTrue(bfImageExtra1.hasMipmaps())
         assertEquals(8, bfImageExtra1.includedMipmaps())
 
         assertEquals(1, bfImageExtra2.numberOfChannels())
-        assertTrue(bfImageExtra2.hasMipmaps())
         assertEquals(15, bfImageExtra2.includedMipmaps())
 
         assertEquals(2, bfImageExtra3.numberOfChannels())
-        assertFalse(bfImageExtra3.hasMipmaps())
         assertEquals(0, bfImageExtra3.includedMipmaps())
 
         assertEquals(4, bfImageExtra4.numberOfChannels())
-        assertTrue(bfImageExtra4.hasMipmaps())
         assertEquals(1, bfImageExtra4.includedMipmaps())
     }
 
