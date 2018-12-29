@@ -3,6 +3,7 @@ package utils
 import platform.posix.putenv
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 class EnviromentVariablesTest {
 
@@ -27,5 +28,11 @@ class EnviromentVariablesTest {
         assertEquals("test", utils.getenv("ENV_B"))
         assertEquals("kotgin", utils.getenv("ENV_C"))
         assertEquals(null, utils.getenv("ENV_D"))
+    }
+
+    @Test
+    fun `all env vars`() {
+        val list = getAllEnvironmentVariables()
+        assertNotNull(list)
     }
 }

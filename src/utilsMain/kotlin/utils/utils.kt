@@ -1,7 +1,7 @@
 package utils
 
-import kotlinx.cinterop.pin
-import kotlinx.cinterop.toKString
+import kotlinx.cinterop.*
+import platform.posix.environ
 import platform.posix.posix_errno
 import platform.posix.putenv
 
@@ -18,6 +18,23 @@ operator fun String.times(times: Int): String {
 fun getenv(key: String, default: String? = null): String? {
     val ptr = platform.posix.getenv(key)
     return ptr?.toKString() ?: default
+}
+
+fun getAllEnvironmentVariables(): List<Pair<String, String>> {
+    val pairs = mutableListOf<Pair<String, String>>()
+    var env = environ
+
+    while (env != null) {
+        val pair = env.pointed
+        val str = pair.value?.toKString() ?: break
+
+        val parts = str.split('=')
+
+        pairs.add(Pair(parts[0], parts[1]))
+        env += 1
+    }
+
+    return pairs
 }
 
 /* .env loader */
