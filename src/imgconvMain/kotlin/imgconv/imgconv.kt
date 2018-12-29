@@ -10,6 +10,10 @@ import utils.Logger
 import utils.Options
 import utils.Timer
 import kotlin.math.round
+import kotlin.native.concurrent.Future
+import kotlin.native.concurrent.TransferMode
+import kotlin.native.concurrent.Worker
+import kotlin.native.concurrent.waitForMultipleFutures
 
 fun determineRequiredChannels(opts: ActualOptions): Int {
     return when {
@@ -20,12 +24,51 @@ fun determineRequiredChannels(opts: ActualOptions): Int {
     }
 }
 
+inline fun round2(f: Float) = round(f * 100f) / 100f
+
+fun humanFileSize(bytes: Int): String {
+    return when {
+        bytes < 1024 -> bytes.toString()
+        bytes < 1048576 -> "${round2(bytes.toFloat() / 1024)}kb"
+        else -> "${round2(bytes.toFloat() / 1048576)}mb"
+    }
+}
+
 @ThreadLocal
 object Timers {
     val IO_LOAD = Timer()
     val DXT = Timer()
     val LZ4 = Timer()
     val IO_SAVE = Timer()
+}
+
+/* Extracts 4 * 4 block of pixels to specified buffer from specified buffer. */
+fun extractBlock(
+    from: CArrayPointer<UByteVar>, to: CArrayPointer<UByteVar>,
+    blockX: Int, blockY: Int, width: Int, requiredChannels: Int
+) {
+    // [R0 G0 B0   R1 G1 B1   R2 G2 B2   R3 G3 B3]
+    // [R4 G4 B4   R5 G5 B5   R6 G6 B6   R7 G7 B7]
+    // ...
+
+    val sourceRowLength = width * requiredChannels
+    val sourceFirstByteInBlock = 4 * blockY * sourceRowLength + 4 * blockX * requiredChannels
+
+    var dstIdx = 0
+    repeat(4) { rowIdx ->
+        val rowFirstByte = sourceFirstByteInBlock + (rowIdx * sourceRowLength)
+
+        repeat(4) { colIdx ->
+            to[dstIdx++] = from[rowFirstByte + requiredChannels * colIdx + 0] // r
+            to[dstIdx++] = from[rowFirstByte + requiredChannels * colIdx + 1] // g
+            to[dstIdx++] = from[rowFirstByte + requiredChannels * colIdx + 2] // b
+            if (requiredChannels == 4) {
+                to[dstIdx++] = from[rowFirstByte + requiredChannels * colIdx + 3] // a
+            } else {
+                to[dstIdx++] = 255.toUByte() // alpha is ignored
+            }
+        }
+    }
 }
 
 fun main(args: Array<String>) {
@@ -46,6 +89,7 @@ fun main(args: Array<String>) {
         .option('s', "srgb", "Use gamma for RGB channels (SRGB)")
         .requiredValue("input-file", "File to read as input file")
         .optionalValue("output-file", "Output file to write data to")
+        .optionalValue("dxt-threads", "The number of threads to use when DXT encoding")
 
     val opts = options.parse(args)
     if (opts.shouldDisplayHelp()) {
@@ -90,52 +134,77 @@ fun main(args: Array<String>) {
 
             bfFlags = bfFlags.with(BF_IMAGE_FLAG_DXT)
 
+            /* structure passed to worker as argument */
+            data class DXTCompressionArg(
+                val blockYBase: Int,
+                val width: Int,
+                val input: CArrayPointer<UByteVar>,
+                val output: CArrayPointer<UByteVar>,
+                val tempMemory: CArrayPointer<UByteVar>,
+                val requiredChannels: Int,
+                val stbFlags: Int
+            )
+
+            val workerCount = opts.getOptionalValue("dxt-threads", "8").toInt() /* detect num of processors */
+            val workers = Array(workerCount) { Worker.start() }
+
             val compressedSize = pixelsSize / 6 // 4 (dxt5) or 6 (dxt1)
             val compressed = allocArray<UByteVar>(compressedSize)
 
             val blockSize = 64 // 4 width * 4 height * 4 rgba
-            val blockBuf = allocArray<UByteVar>(blockSize) /* must be RGBA 4 bytes per pixel for stb */
 
-            /* Extracts 4 * 4 block of pixels to specified buffer from specified buffer. */
-            fun extractBlock(
-                from: CArrayPointer<UByteVar>, to: CArrayPointer<UByteVar>,
-                blockX: Int, blockY: Int, width: Int
-            ) {
-                // [R0 G0 B0   R1 G1 B1   R2 G2 B2   R3 G3 B3]
-                // [R4 G4 B4   R5 G5 B5   R6 G6 B6   R7 G7 B7]
-                // ...
-
-                val sourceRowLength = width * requiredChannels
-                val sourceFirstByteInBlock = 4 * blockY * sourceRowLength + 4 * blockX * requiredChannels
-
-                var dstIdx = 0
-                repeat(4) { rowIdx ->
-                    val rowFirstByte = sourceFirstByteInBlock + (rowIdx * sourceRowLength)
-
-                    repeat(4) { colIdx ->
-                        to[dstIdx++] = from[rowFirstByte + requiredChannels * colIdx + 0] // r
-                        to[dstIdx++] = from[rowFirstByte + requiredChannels * colIdx + 1] // g
-                        to[dstIdx++] = from[rowFirstByte + requiredChannels * colIdx + 2] // b
-                        if (requiredChannels == 4) {
-                            to[dstIdx++] = from[rowFirstByte + requiredChannels * colIdx + 3] // a
-                        } else {
-                            to[dstIdx++] = 255.toUByte() // alpha is ignored
-                        }
-                    }
-                }
-            }
+            /* thread local memory for threads */
+            val workerBlocks =
+                Array(workerCount) { allocArray<UByteVar>(blockSize) } /* must be RGBA 4 bytes per pixel for stb */
 
             val stbFlags = 0 or
                     (if (dxtHq) STB_DXT_HIGHQUAL else 0) or
                     (if (dxtDither) STB_DXT_DITHER else 0)
 
-            // TODO: Do stuff multithreaded
+            log.info("dxt $workerCount threads")
+            val futures: MutableSet<Future<Unit>> = mutableSetOf()
             var destPointer = compressed
-            repeat(height.value / 4) { y ->
-                repeat(width.value / 4) { x ->
-                    extractBlock(pixels!!.reinterpret(), blockBuf, x, y, width.value)
-                    stb_compress_dxt_block(destPointer, blockBuf, requiredChannels - 3, stbFlags)
-                    destPointer = (destPointer.toLong() + 8L).toCPointer()!!
+            repeat(height.value / (4 * 32)) { y ->
+                val workerId = (y) % workerCount
+                futures.add(workers[workerId].execute(TransferMode.SAFE, {
+                    DXTCompressionArg(
+                        y * 32,
+                        width.value,
+                        pixels!!.reinterpret(),
+                        destPointer,
+                        workerBlocks[workerId],
+                        requiredChannels,
+                        stbFlags
+                    )
+                }) {
+                    var dest = it.output
+
+                    repeat(32) { blockYOffset ->
+                        repeat(it.width / 4) { blockX ->
+                            extractBlock(
+                                it.input,
+                                it.tempMemory,
+                                blockX,
+                                it.blockYBase + blockYOffset,
+                                it.width,
+                                it.requiredChannels
+                            )
+                            stb_compress_dxt_block(dest, it.tempMemory, it.requiredChannels - 3, it.stbFlags)
+                            dest = (dest.toLong() + 8L).toCPointer()!!
+                        }
+                    }
+                })
+                destPointer = (destPointer.toLong() + (8L * 32 * width.value / 4)).toCPointer()!!
+            }
+
+            /* wait for all blocks to be processed */
+            var done = 0
+            while (done < futures.size) {
+                val ready = futures.waitForMultipleFutures(250)
+                ready.forEach {
+                    it.consume {
+                        done += 1
+                    }
                 }
             }
 
@@ -185,8 +254,11 @@ fun main(args: Array<String>) {
         val sizeRaw = header.width * header.height * requiredChannels.toUInt()
         val sizeCompressed = fileBuffer.pos.toUInt()
         val ratio = sizeCompressed.toInt().toFloat() / sizeRaw.toInt().toFloat()
-        log.info("size raw=$sizeRaw compressed=$sizeCompressed ratio=${round(10000f * ratio) / 100f}%")
-
+        log.info(
+            "size raw=${humanFileSize(sizeRaw.toInt())} " +
+                    "compressed=${humanFileSize(sizeCompressed.toInt())} " +
+                    "ratio=${round(10000f * ratio) / 100f}%"
+        )
         log.info("time load=${Timers.IO_LOAD.total}ms")
         log.info("time dxt=${Timers.DXT.total}ms")
         log.info("time lz4=${Timers.LZ4.total}ms")
