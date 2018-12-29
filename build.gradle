@@ -22,7 +22,7 @@ kotlin {
         fromPreset(presets.mingwX64, 'io')
         fromPreset(presets.mingwX64, 'utils')
         fromPreset(presets.mingwX64, 'bf')
-        
+
         configure([bf]) {
             compilations.main {
                 cinterops {
@@ -105,7 +105,9 @@ kotlin {
         bfinfoMain {
         }
         imgconvMain {
-            dependsOn bfinfoMain
+            dependsOn ioMain
+            dependsOn bfMain
+            dependsOn utilsMain
         }
         geoconvMain {
             dependsOn bfinfoMain
@@ -114,6 +116,8 @@ kotlin {
         mingwMain {
             dependsOn bfinfoMain
             dependsOn mathMain
+            dependsOn ioMain
+            dependsOn bfMain
         }
         mingwTest {
         }
