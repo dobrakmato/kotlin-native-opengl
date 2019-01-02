@@ -2,8 +2,6 @@ package bf
 
 import io.ByteBuffer
 import io.free
-import kotlinx.cinterop.get
-import platform.posix.pow
 import kotlin.test.*
 
 class BfGeometryTests {
@@ -15,17 +13,15 @@ class BfGeometryTests {
             .with(BF_GEOMETRY_FLAG_LONG_INDICES)
         val ref2 = BfGeometryFlags.create()
             .with(BF_GEOMETRY_FLAG_LZ4)
-            .with(BF_GEOMETRY_FLAG_LZ4_HC)
+            .with(BF_GEOMETRY_FLAG_UNUSED)
             .with(BF_GEOMETRY_FLAG_HAS_BONES)
 
 
         assertTrue(ref1.lz4())
         assertTrue(ref1.longIndices())
-        assertFalse(ref1.lz4hc())
         assertFalse(ref1.hasBones())
 
         assertTrue(ref2.lz4())
-        assertTrue(ref2.lz4hc())
         assertTrue(ref2.hasBones())
     }
 
@@ -82,6 +78,11 @@ class BfGeometryTests {
         }
 
         buffer.free()
+    }
+
+    @Test
+    fun `bf geometry header size`() {
+        assertEquals(BfHeader.SIZE_BYTES + 1 + 1 + 4, BfGeometryHeader.SIZE_BYTES)
     }
 
     fun `reading bf geometry file`() {

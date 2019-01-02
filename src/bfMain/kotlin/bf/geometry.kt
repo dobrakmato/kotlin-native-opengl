@@ -20,23 +20,28 @@ enum class BfGeometryListType(val id: UByte) {
 
 /* geometry flags */
 const val BF_GEOMETRY_FLAG_LZ4: BfGeometryFlag = 1u
-const val BF_GEOMETRY_FLAG_LZ4_HC: BfGeometryFlag = 2u
+const val BF_GEOMETRY_FLAG_UNUSED: BfGeometryFlag = 2u
 const val BF_GEOMETRY_FLAG_LONG_INDICES: BfGeometryFlag = 4u
 const val BF_GEOMETRY_FLAG_HAS_BONES: BfGeometryFlag = 8u
 
 
 inline class BfGeometryFlags(val value: UByte) {
     inline fun lz4() = (value and BF_GEOMETRY_FLAG_LZ4) == BF_GEOMETRY_FLAG_LZ4
-    inline fun lz4hc() = (value and BF_GEOMETRY_FLAG_LZ4_HC) == BF_GEOMETRY_FLAG_LZ4_HC
+    inline fun unused1() = (value and BF_GEOMETRY_FLAG_UNUSED) == BF_GEOMETRY_FLAG_UNUSED
     inline fun longIndices() = (value and BF_GEOMETRY_FLAG_LONG_INDICES) == BF_GEOMETRY_FLAG_LONG_INDICES
     inline fun hasBones() = (value and BF_GEOMETRY_FLAG_HAS_BONES) == BF_GEOMETRY_FLAG_HAS_BONES
 
     companion object {
+        inline val SIZE_BYTES: Int
+            get() {
+                return 1
+            }
+
         fun create() = BfGeometryFlags(0u)
     }
 }
 
-fun BfGeometryFlags.with(flag: UByte) = BfGeometryFlags(this.value or flag)
+inline fun BfGeometryFlags.with(flag: UByte) = BfGeometryFlags(this.value or flag)
 
 
 data class BfGeometryHeader(
@@ -44,7 +49,14 @@ data class BfGeometryHeader(
     val flags: BfGeometryFlags,
     val lodLevels: UByte = 0u,
     val uncompressedSize: UInt
-)
+) {
+    companion object {
+        inline val SIZE_BYTES: Int
+            get() {
+                return BfHeader.SIZE_BYTES + BfGeometryFlags.SIZE_BYTES + UByte.SIZE_BYTES + UInt.SIZE_BYTES
+            }
+    }
+}
 
 
 fun ByteBuffer.writeBfGeometryHeader(bfGeometryHeader: BfGeometryHeader) {

@@ -36,7 +36,7 @@ inline class BfImageFlags(val value: UByte) {
     }
 }
 
-fun BfImageFlags.with(flag: UByte) = BfImageFlags(this.value or flag)
+inline fun BfImageFlags.with(flag: UByte) = BfImageFlags(this.value or flag)
 
 inline class BfImageExtra(val value: UByte) { // [_ _ _ _] mipmap levels [_] inline mipmaps [_ _ _] channels
     inline fun includedMipmaps() = ((value and 0b11110000u).toUInt() shr 4).toInt()
