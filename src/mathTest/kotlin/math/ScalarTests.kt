@@ -58,6 +58,18 @@ class ScalarTests {
     }
 
     @Test
+    fun rounding() {
+        assertEquals(2.1f, round1(2.08f))
+        assertEquals(2.0f, round1(2.01f))
+
+        assertEquals(2.01f, round2(2.008f))
+        assertEquals(2.00f, round2(2.001f))
+
+        assertEquals(2.001f, round3(2.0008f))
+        assertEquals(2.000f, round3(2.0001f))
+    }
+
+    @Test
     fun safeDiv() {
         assertEquals(4f, 8f safediv 2f)
         assertFails {

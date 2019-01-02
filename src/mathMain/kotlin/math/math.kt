@@ -57,6 +57,10 @@ inline fun lerp(min: Float, max: Float, f: Float) = min * (1.0f - f) + max * f
 inline fun pow2(f: Float) = f * f
 inline fun pow3(f: Float) = f * f * f
 
+inline fun round1(f: Float) = round(f * 10f) / 10f
+inline fun round2(f: Float) = round(f * 100f) / 100f
+inline fun round3(f: Float) = round(f * 1000f) / 1000f
+
 inline fun toDegrees(rad: Float) = rad * (180.0f * INV_PI)
 inline fun toRadians(deg: Float) = deg * (PI / 180.0f)
 
