@@ -1,8 +1,5 @@
 package sample
 
-import bfinfo.BFImageHeader
-import bfinfo.BF_HEADER_IMAGE_SIZE
-import bfinfo.readBFHeader
 import galogen.*
 import kotlinx.cinterop.*
 import lz4.LZ4_decompress_safe

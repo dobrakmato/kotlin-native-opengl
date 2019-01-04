@@ -44,6 +44,13 @@ kotlin {
 
             compilations.main {
                 cinterops {
+                    glfw {
+                    }
+                    galogen {
+                    }
+                    lz4 {
+                    }
+
                 }
                 linkerOpts "$resFile"
             }
@@ -103,6 +110,9 @@ kotlin {
             dependsOn ioMain
         }
         bfinfoMain {
+            dependsOn ioMain
+            dependsOn bfMain
+            dependsOn utilsMain
         }
         imgconvMain {
             dependsOn ioMain
@@ -110,14 +120,17 @@ kotlin {
             dependsOn utilsMain
         }
         geoconvMain {
-            dependsOn bfinfoMain
+            dependsOn ioMain
+            dependsOn bfMain
             dependsOn mathMain
+            dependsOn utilsMain
         }
         mingwMain {
-            dependsOn bfinfoMain
             dependsOn mathMain
             dependsOn ioMain
             dependsOn bfMain
+            dependsOn mathMain
+            dependsOn utilsMain
         }
         mingwTest {
         }

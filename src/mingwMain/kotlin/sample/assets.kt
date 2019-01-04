@@ -1,10 +1,6 @@
 package sample
 
-import bf.BfImageHeader
-import bf.computeBfImagePayloadSize
-import bf.readBfImageHeader
-import bf.readLZ4Decompressed
-import bfinfo.BF_MAGIC
+import bf.*
 import galogen.*
 import io.ByteBuffer
 import kotlinx.cinterop.*

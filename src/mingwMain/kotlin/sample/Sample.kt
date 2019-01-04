@@ -3,8 +3,10 @@ package sample
 import galogen.*
 import glfw.*
 import kotlinx.cinterop.*
+import platform.posix.usleep
 import kotlin.math.round
 import kotlin.system.getTimeMillis
+import kotlin.system.getTimeNanos
 
 @ExperimentalUnsignedTypes
 fun checkGLError() {
@@ -42,6 +44,15 @@ fun main(args: Array<String>) {
     println("Window created in ${getTimeMillis() - start} ms")
 
     glfwMakeContextCurrent(window)
+    glfwSetWindowSizeCallback(window, staticCFunction { _, width, height ->
+        println("[Window] new size $width*$height")
+    })
+    glfwSetJoystickCallback(staticCFunction { joy, event ->
+        when (event) {
+            GLFW_CONNECTED -> println("[Joystick] Connected #$joy")
+            GLFW_DISCONNECTED -> println("[Joystick] Disconnected #$joy")
+        }
+    })
 
     println("OpenGL Version: " + glGetString(GL_VERSION)?.reinterpret<ByteVar>()?.toKString())
     println("OpenGL Vendor: " + glGetString(GL_VENDOR)?.reinterpret<ByteVar>()?.toKString())
@@ -141,6 +152,22 @@ fun main(args: Array<String>) {
         if (error != GL_NO_ERROR) {
             throw Exception("Gl error! $error")
         }
+
+/*
+        val present = glfwJoystickPresent(GLFW_JOYSTICK_1);
+        if (present > 0) {
+            memScoped {
+                val count = alloc<IntVar>()
+                val axes = glfwGetJoystickAxes(GLFW_JOYSTICK_1, count.ptr)
+
+                var i = 0
+                if (count.value > 0) {
+                    val value = (axes + i)!!.pointed
+                    println("axis=$i value=${value.value}")
+                    i += 1
+                }
+            }
+        }*/
     } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS)
 
     glfwTerminate()

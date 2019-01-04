@@ -1,10 +1,12 @@
 package utils
 
-enum class LogLevel(val level: Int) {
-    DEBUG(0),
-    INFO(1),
-    WARN(2),
-    ERROR(3)
+const val ANSI_RESET = "\u001B[0m"
+
+enum class LogLevel(val level: Int, val ansiColorCode: String) {
+    DEBUG(0, "\u001B[0;36m"),
+    INFO(1, "\u001B[0;37m"),
+    WARN(2, "\u001B[0;33m"),
+    ERROR(3, "\u001B[0;31m")
 }
 
 class Logger(private val name: String) {
@@ -23,7 +25,14 @@ class Logger(private val name: String) {
     }
 
     private fun format(level: LogLevel, message: String): String {
-        return "[${level.name}] [$name] $message"
+        if (Logger.COLORS) {
+            return "${level.ansiColorCode}[${level.name}] [$name] $message$ANSI_RESET"
+        }
+        return "[${level.name}] [$name] $message$ANSI_RESET"
+    }
+
+    companion object {
+        val COLORS by lazy { getenv("COLORS", "YES") == "YES" }
     }
 }
 

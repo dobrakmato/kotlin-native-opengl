@@ -1,98 +1,77 @@
 package bfinfo
 
-import kotlinx.cinterop.*
-import platform.posix.*
+import bf.*
+import io.ByteBuffer
+import io.readBinaryFile
+import platform.posix.exit
+import utils.Logger
+import utils.Options
+import kotlin.math.round
 
-val COLOR = "YES"
+inline fun round2(f: Float) = round(f * 100f) / 100f
 
-const val ANSI_WITE = "\u001B[0;37m"
-const val ANSI_GREEN_INTENSIVE = "\u001B[1;92m"
-const val ANSI_GREEN_REGULAR = "\u001B[0;32m"
-const val ANSI_RESET = "\u001B[0m"
-
-fun log(msg: String, value: String? = null) {
-    if (COLOR == "NO") {
-        if (value == null) {
-            println("bfinfo $msg")
-        } else {
-            println("bfinfo $msg\t$value")
-        }
-    } else {
-        if (value == null) {
-            println("${ANSI_WITE}bfinfo $ANSI_GREEN_REGULAR$msg$ANSI_RESET")
-        } else {
-            println("${ANSI_WITE}bfinfo $ANSI_GREEN_REGULAR$msg $ANSI_GREEN_INTENSIVE$value$ANSI_RESET")
-        }
+fun humanFileSize(bytes: Long): String {
+    return when {
+        bytes < 1024 -> bytes.toString()
+        bytes < 1048576 -> "${round2(bytes.toFloat() / 1024)}KiB"
+        else -> "${round2(bytes.toFloat() / 1048576)}MiB"
     }
 }
 
-fun hasBFMagic(ptr: CArrayPointer<UByteVar>): Boolean {
-    val a = ptr[0]
-    val b = ptr[0 + 1]
-    val c = ptr[0 + 2]
-    val d = ptr[0 + 3]
-
-    return (a.toInt() or
-            (b.toInt() shl 8) or
-            (c.toInt() shl 16) or
-            (d.toInt() shl 24)) == BF_MAGIC
-}
-
-
 fun main(args: Array<String>) {
+    val log = Logger("bfinfo")
+    val options = Options()
+        .option('g', "gui", "Open GUI")
+
     if (args.isEmpty()) {
-        println("bfinfo.exe INPUT_FILE")
+        log.error("No file provided as argument!")
         exit(1)
     }
 
-    val path = args[0]
-    val f = fopen(path, "rb") ?: throw Exception("Cannot open file $path because: ${posix_errno()}")
-    fseek(f, 0, SEEK_END)
-    val size = ftell(f)
-    fseek(f, 0, SEEK_SET)
-    val data = nativeHeap.allocArray<UByteVar>(size)
-    fread(data, 1, size.toULong(), f)
-    fclose(f)
+    val inputFile = args[0]
+    val buffer = readBinaryFile(inputFile)
+    val genericHeader = buffer.readBfHeader()
 
-    if (!hasBFMagic(data)) {
-        log("not a BF file")
-        exit(2)
+    /* generic information */
+    log.info("magic ${genericHeader.magic}")
+    log.info("version ${genericHeader.version}")
+    log.info("file type ${genericHeader.fileType}")
+    log.info("file size ${buffer.size} ${humanFileSize(buffer.size)}")
+
+    /* rewind buffer */
+    buffer.pos = 0
+
+    when (genericHeader.fileType) {
+        BfFileType.IMAGE -> infoImage(options, buffer, log)
+        BfFileType.GEOMETRY -> infoGeometry(options, buffer, log)
+        BfFileType.AUDIO -> TODO()
+        BfFileType.MATERIAL -> TODO()
+        BfFileType.FILESYSTEM -> TODO()
+        BfFileType.COMPILED_SHADER -> TODO()
+        BfFileType.SCENE -> TODO()
     }
-
-    val version = data[4]
-    val fileType = data[5]
-
-    log("type", "image file")
-    log("size", "$size bytes")
-    log("version", "$version")
-
-    when (fileType.toByte()) {
-        BF_FILE_IMAGE -> printImageInfo(data, version, size)
-        BF_FILE_GEOMETRY -> printGeometryInfo(data, version, size)
-    }
-
-    nativeHeap.free(data)
 }
 
-fun printImageInfo(data: CArrayPointer<UByteVar>, version: UByte, size: Int) {
-    val header = readBFHeader(data.reinterpret())
+/* BfImage information */
+fun infoImage(options: Options, buffer: ByteBuffer, log: Logger) {
+    val header = buffer.readBfImageHeader()
 
-    log("flags lz4", "${header.flags.lz4()}")
-    log("flags lz4hc", "${header.flags.lz4hc()}")
-    log("flags vflip", "${header.flags.verticallyFlipped()}")
-    log("flags float", "${header.flags.float()}")
-    log("flags 16bit", "${header.flags.is16bit()}")
-    log("flags srgb", "${header.flags.srgb()}")
-    log("flags dxt", "${header.flags.dxt()}")
-    log("flags skybox", "${header.flags.skybox()}")
-    log("has mipmaps", "${header.extra.hasMipmaps()}")
-    log("channels", "${header.extra.numberOfChannels()}")
-    log("mipmaps", "${header.extra.includedMipmaps()}")
-    log("width", "${header.width}")
-    log("height", "${header.height}")
-    log("uncompressed size", "${header.uncompressedSize}")
+    log.info("width ${header.width}")
+    log.info("height ${header.height}")
+    log.info("channels ${header.extra.numberOfChannels()}")
+    log.info("mipmaps ${header.extra.includedMipmaps()}")
+    log.info("flag lz4 ${header.flags.lz4()}")
+    log.info("flag dxt ${header.flags.dxt()}")
+    log.info("flag float ${header.flags.float()}")
+    log.info("flag 16bit ${header.flags.is16bit()}")
+    log.info("flag vflip ${header.flags.verticallyFlipped()}")
+    log.info("flag srgb ${header.flags.srgb()}")
+    log.info("flag skybox ${header.flags.skybox()}")
 }
 
-fun printGeometryInfo(data: CArrayPointer<UByteVar>, version: UByte, size: Int) {
+/* BfGeometry information */
+fun infoGeometry(options: Options, buffer: ByteBuffer, log: Logger) {
+    val header = buffer.readBfGeometryHeader()
+
 
 }
