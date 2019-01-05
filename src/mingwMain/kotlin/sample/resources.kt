@@ -1,6 +1,10 @@
 package sample
 
 import galogen.*
+import gl.BufferObject
+import gl.Program
+import gl.Texture2D
+import gl.VAO
 import kotlinx.cinterop.*
 import lz4.LZ4_decompress_safe
 import platform.opengl32.GL_R
@@ -84,8 +88,8 @@ object MeshLoader : SpecializedResourceLoader<Mesh> {
 
 class Material {
     private val shader: Resource<Program> = Resources.load("shaders/deffered_pbr.csh")
-    private val albedoTexture: Resource<Texture> = Resources.load("textures/stone01.png")
-    private val normalTexture: Resource<Texture> = Resources.load("textures/stone01_n.png")
+    private val albedoTexture: Resource<Texture2D> = Resources.load("textures/stone01.png")
+    private val normalTexture: Resource<Texture2D> = Resources.load("textures/stone01_n.png")
 
     fun isReady(): Boolean {
         return shader.isLoaded()

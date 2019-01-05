@@ -2,6 +2,9 @@ package sample
 
 import bf.*
 import galogen.*
+import gl.Texture2D
+import gl.TextureFilter
+import gl.TextureWrapMode
 import io.ByteBuffer
 import kotlinx.cinterop.*
 import platform.opengl32.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
@@ -34,7 +37,7 @@ object AssetLoader {
 
         // delegate to specific loader
         when (fileType.toInt()) {
-            1 -> BFTextureLoaderVersion2TEST.load(asset as Asset<Texture>, data, size)
+            1 -> BFTextureLoaderVersion2TEST.load(asset as Asset<Texture2D>, data, size)
             else -> throw RuntimeException("Loading of type $fileType is not yet supported!")
         }
 
@@ -55,7 +58,7 @@ interface SpecializedAssetLoader<T> {
 
 /* texture specialized loading */
 
-object BFTextureLoaderVersion2TEST : SpecializedAssetLoader<Texture> {
+object BFTextureLoaderVersion2TEST : SpecializedAssetLoader<Texture2D> {
     private val log = Logger("BFTextureLoaderVersion2TEST")
 
     private val BfImageHeader.glInternalFormat: Int
@@ -112,7 +115,7 @@ object BFTextureLoaderVersion2TEST : SpecializedAssetLoader<Texture> {
             }
         }
 
-    override fun load(asset: Asset<Texture>, data: FileData, dataSize: Int) {
+    override fun load(asset: Asset<Texture2D>, data: FileData, dataSize: Int) {
         val buffer = ByteBuffer(dataSize.toLong(), data)
         val header = buffer.readBfImageHeader()
 
@@ -141,7 +144,7 @@ object BFTextureLoaderVersion2TEST : SpecializedAssetLoader<Texture> {
             (buffer.data + buffer.pos.toLong())!!
         }
 
-        val texture = Texture()
+        val texture = Texture2D()
         texture.label = "Texture for ${asset.path}"
 
         if (header.flags.dxt()) {
@@ -168,7 +171,7 @@ object BFTextureLoaderVersion2TEST : SpecializedAssetLoader<Texture> {
         /* Set by using metadata. */
         texture.setFilters(TextureFilter.LINEAR, TextureFilter.LINEAR)
         texture.setWraps(TextureWrapMode.REPEAT, TextureWrapMode.REPEAT)
-        texture.setAnisotropicFiltering(Texture.defaultAnisotropyLevel)
+        texture.setAnisotropicFiltering(Texture2D.defaultAnisotropyLevel)
 
         asset.asset = texture
 

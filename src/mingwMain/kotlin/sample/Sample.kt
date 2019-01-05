@@ -1,6 +1,7 @@
 package sample
 
 import galogen.*
+import gl.*
 import glfw.*
 import kotlinx.cinterop.*
 import platform.posix.usleep
@@ -31,7 +32,7 @@ fun main(args: Array<String>) {
     // glfwWindowHint( GLFW_DOUBLEBUFFER, GL_FALSE )
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4)
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5)
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE)
 
     val window = glfwCreateWindow(1024, 768, "Title", null, null)
@@ -80,12 +81,12 @@ fun main(args: Array<String>) {
 
     // ---- shaders ----
 
-    val vertex = Shader(ShaderType.VERTEX)
-    vertex.uploadSource(arrayOf(readFileText("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\shaders\\basic.vert")))
+    val vertex = VertexShader()
+    vertex.uploadSource(readFileText("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\shaders\\basic.vert"))
     vertex.compile()
 
-    val fragment = Shader(ShaderType.FRAGMENT)
-    fragment.uploadSource(arrayOf(readFileText("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\shaders\\basic.frag")))
+    val fragment = FragmentShader()
+    fragment.uploadSource(readFileText("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\shaders\\basic.frag"))
     fragment.compile()
 
     val program = Program()
@@ -105,7 +106,7 @@ fun main(args: Array<String>) {
     // ---- texture ----
 
     val texture = AssetLoader
-        .getAsset<Texture>("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\sprites\\kogin.bf")
+        .getAsset<Texture2D>("C:\\Users\\Matej\\IdeaProjects\\kotgin\\src\\mingwMain\\resources\\sprites\\kogin.bf")
 
     println("textures ready")
 

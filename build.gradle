@@ -142,6 +142,7 @@ kotlin {
             dependsOn mathMain
             dependsOn ioMain
             dependsOn bfMain
+            dependsOn glMain
             dependsOn mathMain
             dependsOn utilsMain
         }
