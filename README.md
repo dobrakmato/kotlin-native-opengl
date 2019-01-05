@@ -39,6 +39,7 @@ This will take around 5 - 10 minutes.
 - utils - timer, cmdopts parsing, logging, primitive vectors (arraylists), env variables
 - bf - bf headers parsing, bf data access, compression & decompression, loading to memory, bf image, bf geometry
 - bf_tools - bfinfo, bfview, imgconv, geoconv, matmake
+- gl - opengl primitives, gl debugging tools
 - engine - gl objects, asset pipeline, visibility, scene graph, rendering, input, windows
 
 ## Tools
