@@ -22,11 +22,21 @@ kotlin {
         fromPreset(presets.mingwX64, 'io')
         fromPreset(presets.mingwX64, 'utils')
         fromPreset(presets.mingwX64, 'bf')
+        fromPreset(presets.mingwX64, 'gl')
 
         configure([bf]) {
             compilations.main {
                 cinterops {
                     lz4 {
+                    }
+                }
+            }
+        }
+
+        configure([gl]) {
+            compilations.main {
+                cinterops {
+                    galogen {
                     }
                 }
             }
@@ -106,12 +116,15 @@ kotlin {
         // in gradle.properties file and re-import your project in IDE.
         ioMain {
         }
+        glMain {
+        }
         bfMain {
             dependsOn ioMain
         }
         bfinfoMain {
             dependsOn ioMain
             dependsOn bfMain
+            dependsOn glMain
             dependsOn utilsMain
         }
         imgconvMain {

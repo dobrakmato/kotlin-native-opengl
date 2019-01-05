@@ -2,6 +2,7 @@ package sample
 
 import galogen.*
 import kotlinx.cinterop.*
+import utils.printErr
 
 class KHRStackTrace : RuntimeException()
 
