@@ -2,6 +2,7 @@ package gl
 
 import galogen.*
 import kotlinx.cinterop.*
+import kotlin.contracts.contract
 
 
 class Program(override val id: UInt = glCreateProgram()) : Labelled, Disposable {
@@ -39,7 +40,14 @@ class Program(override val id: UInt = glCreateProgram()) : Labelled, Disposable 
 
     private inline fun ensureUniformLocationExists(name: String) {
         if (name !in uniformLocations) {
-            uniformLocations[name] = glGetUniformLocation(id, name)
+            val id = glGetUniformLocation(id, name)
+            if (id == -1) glDebugMessage(
+                "Application tried to use non-existing uniform '$name'!",
+                GL_DEBUG_SOURCE_APPLICATION,
+                GL_DEBUG_TYPE_ERROR,
+                GL_DEBUG_SEVERITY_MEDIUM
+            )
+            uniformLocations[name] = id
         }
     }
 

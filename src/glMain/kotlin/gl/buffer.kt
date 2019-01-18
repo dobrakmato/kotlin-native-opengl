@@ -22,8 +22,8 @@ class BufferObject(override val id: UInt = GLObjects.newBufferObject()) : Labell
         glNamedBufferStorage(id, size, data, flags)
     }
 
-    fun uploadData(offset: Long, size: Long, data: CValuesRef<*>? = null) {
-        glNamedBufferSubData(id, offset, size, data)
+    fun uploadData(offset: Long, sizeBytes: Long, data: CValuesRef<*>? = null) {
+        glNamedBufferSubData(id, offset, sizeBytes, data)
     }
 
     override fun free() {
