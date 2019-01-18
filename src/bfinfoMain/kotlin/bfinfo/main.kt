@@ -2,6 +2,7 @@ package bfinfo
 
 import bf.*
 import io.ByteBuffer
+import io.Path
 import io.readBinaryFile
 import platform.posix.exit
 import utils.Logger
@@ -42,7 +43,7 @@ fun main(args: Array<String>) {
     buffer.pos = 0
 
     when (genericHeader.fileType) {
-        BfFileType.IMAGE -> infoImage(options, buffer, log)
+        BfFileType.IMAGE -> infoImage(options, buffer, log, Path(inputFile))
         BfFileType.GEOMETRY -> infoGeometry(options, buffer, log)
         BfFileType.AUDIO -> TODO()
         BfFileType.MATERIAL -> TODO()
@@ -53,7 +54,7 @@ fun main(args: Array<String>) {
 }
 
 /* BfImage information */
-fun infoImage(options: Options, buffer: ByteBuffer, log: Logger) {
+fun infoImage(options: Options, buffer: ByteBuffer, log: Logger, inputFile: Path) {
     val header = buffer.readBfImageHeader()
 
     log.info("width ${header.width}")
@@ -67,6 +68,15 @@ fun infoImage(options: Options, buffer: ByteBuffer, log: Logger) {
     log.info("flag vflip ${header.flags.verticallyFlipped()}")
     log.info("flag srgb ${header.flags.srgb()}")
     log.info("flag skybox ${header.flags.skybox()}")
+
+    buffer.pos = 0
+
+    ImgView(
+        buffer,
+        "bfinfo [${inputFile.filename}] ${header.width}x${header.height} ${header.extra.numberOfChannels()}ch " +
+                if (header.flags.lz4()) "LZ4 " else "" + if (header.flags.dxt()) "DXT " else ""
+
+    ).run()
 }
 
 /* BfGeometry information */

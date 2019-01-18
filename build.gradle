@@ -122,6 +122,7 @@ kotlin {
             dependsOn ioMain
         }
         bfinfoMain {
+            dependsOn mathMain
             dependsOn ioMain
             dependsOn bfMain
             dependsOn glMain
