@@ -354,8 +354,14 @@ data class Matrix4f(
         val IDENTITY = Matrix4f(m11 = 1f, m22 = 1f, m33 = 1f, m44 = 1f)
 
         fun createScale(scale: Vector3f) = Matrix4f(m11 = scale.x, m22 = scale.y, m33 = scale.z)
+
+        fun createScale(x: Float, y: Float, z: Float) = Matrix4f(m11 = x, m22 = y, m33 = z)
+
         fun createTranslation(translation: Vector3f) =
             Matrix4f(m14 = translation.x, m24 = translation.y, m34 = translation.z)
+
+        fun createTranslation(x: Float, y: Float, z: Float) =
+            Matrix4f(m14 = x, m24 = y, m34 = z)
 
         fun createRotationFromQuaternion(rotation: Quaternion): Matrix4f {
             val normalized = rotation.normalized()
