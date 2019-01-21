@@ -8,7 +8,7 @@ import kotlinx.cinterop.memScoped
 
 
 class BufferObject(override val id: UInt = GLObjects.newBufferObject()) : Labelled, Disposable {
-    override var label: String? by Label(GL_ARRAY_BUFFER)
+    override var label: String? by Label(GL_BUFFER)
 
     fun bind(target: GLenum) {
         glBindBuffer(target, id)
@@ -33,23 +33,35 @@ class BufferObject(override val id: UInt = GLObjects.newBufferObject()) : Labell
     }
 
     companion object {
-        inline fun createArrayBuffer(flags: Int, data: CValues<*>?): BufferObject =
-            createArrayBuffer(data?.size?.toLong() ?: 0, flags, data)
+        inline fun createArrayBuffer(flags: Int, data: CValues<*>?, label: String? = null): BufferObject =
+            createArrayBuffer(data?.size?.toLong() ?: 0, flags, data, label)
 
-        inline fun createArrayBuffer(size: Long, flags: Int, data: CValuesRef<*>?): BufferObject {
+        inline fun createArrayBuffer(
+            size: Long,
+            flags: Int,
+            data: CValuesRef<*>?,
+            label: String? = null
+        ): BufferObject {
             val bo = BufferObject()
             bo.bindAsArrayBuffer()
             bo.createStorage(size, flags.toUInt(), data)
+            label.let { bo.label = label }
             return bo
         }
 
-        inline fun createIndexBuffer(flags: Int, data: CValues<*>?): BufferObject =
+        inline fun createIndexBuffer(flags: Int, data: CValues<*>?, label: String? = null): BufferObject =
             createIndexBuffer(data?.size?.toLong() ?: 0, flags, data)
 
-        inline fun createIndexBuffer(size: Long, flags: Int, data: CValuesRef<*>?): BufferObject {
+        inline fun createIndexBuffer(
+            size: Long,
+            flags: Int,
+            data: CValuesRef<*>?,
+            label: String? = null
+        ): BufferObject {
             val bo = BufferObject()
             bo.bindAsIndexBuffer()
             bo.createStorage(size, flags.toUInt(), data)
+            label.let { bo.label = label }
             return bo
         }
     }

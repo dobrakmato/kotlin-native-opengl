@@ -13,8 +13,6 @@ import kotlinx.cinterop.*
 import math.*
 import utils.Logger
 import utils.SIZE_BYTES
-import kotlin.math.abs
-import kotlin.math.cos
 import kotlin.system.getTimeMillis
 
 data class Rect(val x: Float, val y: Float, val w: Float, val h: Float)
@@ -42,8 +40,9 @@ fun cover(imgW: Int, imgH: Int, canvasW: Int, canvasH: Int): Rect {
 
 @ThreadLocal
 object Parameters {
+
     var width = 1024
-    var height = 768
+    var height = 1024
     var scale = 1f
 }
 
@@ -175,23 +174,37 @@ class ImgView(private val bfImage: ByteBuffer, private val title: String) {
         /* load and upload fonts */
 
         /* create vbo & vao */
-        val vbo = BufferObject.createArrayBuffer(
+        val vboPositions = BufferObject.createArrayBuffer(
             GL_MAP_READ_BIT or GL_DYNAMIC_STORAGE_BIT,
             cValuesOf(
                 -1f, -1f, 0f,
                 1f, -1f, 0f,
                 1f, 1f, 0f,
                 -1f, 1f, 0f
-            )
+            ), "vboPositions"
         )
 
-        val ibo = BufferObject.createIndexBuffer(GL_MAP_READ_BIT, cValuesOf(3.toByte(), 0, 1, 2, 3, 1))
+        val vboTexCoords = BufferObject.createArrayBuffer(
+            GL_MAP_READ_BIT,
+            cValuesOf(
+                0f, 0f,
+                1f, 0f,
+                1f, 1f,
+                0f, 1f
+            ), "vboTexCoords"
+        )
+
+        val ibo = BufferObject.createIndexBuffer(GL_MAP_READ_BIT, cValuesOf(3.toByte(), 0, 1, 2, 3, 1), "indices")
 
         val vao = VAO()
         vao.enableAttribute(0)
-        vao.defineBinding(0, vbo, 0, 3 * Float.SIZE_BYTES)
+        vao.enableAttribute(1)
+        vao.defineBinding(0, vboPositions, 0, 3 * Float.SIZE_BYTES)
+        vao.defineBinding(1, vboTexCoords, 0, 2 * Float.SIZE_BYTES)
         vao.defineAttribute(0, 3, GL_FLOAT)
+        vao.defineAttribute(1, 2, GL_FLOAT)
         vao.useBindingAsAttribute(0, 0)
+        vao.useBindingAsAttribute(1, 1)
         vao.elementBuffer(ibo)
 
 
@@ -201,8 +214,6 @@ class ImgView(private val bfImage: ByteBuffer, private val title: String) {
         vao.bind()
         program.use()
         texture.bindTo(0)
-
-        var frames = 0f
 
         do {
             glClear((GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT).toUInt())
@@ -215,7 +226,7 @@ class ImgView(private val bfImage: ByteBuffer, private val title: String) {
             val y1 = remap(rect.y + rect.h, 0f, Parameters.height.toFloat(), -1f, 1f)
 
             /* update image positions to preserve image aspect ratio */
-            vbo.uploadData(
+            vboPositions.uploadData(
                 0, Float.SIZE_BYTES * 12L, cValuesOf(
                     x0, y0, 0f,
                     x1, y0, 0f,
@@ -223,7 +234,6 @@ class ImgView(private val bfImage: ByteBuffer, private val title: String) {
                     x0, y1, 0f
                 )
             )
-            frames += 0.016f
 
             if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
 
@@ -255,7 +265,12 @@ class ImgView(private val bfImage: ByteBuffer, private val title: String) {
                 translation.y / (Parameters.height * 0.5f) / Parameters.scale,
                 0f
             )
-            val scale = Matrix4f.createScale(Parameters.scale, Parameters.scale, Parameters.scale)
+
+            val scale = Matrix4f.createScale(
+                Parameters.scale,
+                Parameters.scale,
+                Parameters.scale
+            )
             program.setUniform("mvp", true, (scale * translation).toFloatArray().toCValues())
 
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, null)
