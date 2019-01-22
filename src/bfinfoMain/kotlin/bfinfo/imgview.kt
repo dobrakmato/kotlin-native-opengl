@@ -13,6 +13,7 @@ import kotlinx.cinterop.*
 import math.*
 import utils.Logger
 import utils.SIZE_BYTES
+import kotlin.reflect.KFunction0
 import kotlin.system.getTimeMillis
 
 data class Rect(val x: Float, val y: Float, val w: Float, val h: Float)
@@ -44,6 +45,8 @@ object Parameters {
     var width = 1024
     var height = 1024
     var scale = 1f
+
+    var updateFn: KFunction0<Unit>? = null
 }
 
 fun mouseScrollCallback(window: CPointer<GLFWwindow>?, x: Double, y: Double) {
@@ -93,6 +96,7 @@ class ImgView(private val bfImage: ByteBuffer, private val title: String) {
             Parameters.width = width
             Parameters.height = height
             glViewport(0, 0, width, height)
+            Parameters.updateFn?.invoke()
         })
 
         glfwSetScrollCallback(window, staticCFunction(::mouseScrollCallback))
@@ -215,7 +219,7 @@ class ImgView(private val bfImage: ByteBuffer, private val title: String) {
         program.use()
         texture.bindTo(0)
 
-        do {
+        fun renderAndUpdate() {
             glClear((GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT).toUInt())
 
             val rect = cover(header.width.toInt(), header.height.toInt(), Parameters.width, Parameters.height)
@@ -286,6 +290,12 @@ class ImgView(private val bfImage: ByteBuffer, private val title: String) {
             if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
                 texture.setFilters(TextureFilter.LINEAR, TextureFilter.LINEAR)
             }
+        }
+
+        Parameters.updateFn = ::renderAndUpdate
+
+        do {
+            renderAndUpdate()
         } while (glfwWindowShouldClose(window) == 0)
 
         glfwTerminate()
