@@ -17,6 +17,7 @@ internal class Geometry {
     val tangents: MutableList<Vector3f> = arrayListOf()
     val bitangents: MutableList<Vector3f> = arrayListOf()
     val indices: IntArrayList = IntArrayList(65536)
+    val geometryMetadata = GeometryMetadata()
 }
 
 /* class for extra data related to geometry but not being a real part of geometry data */
@@ -90,6 +91,9 @@ fun main(args: Array<String>) {
     log.info("imported normals ${geo.normals.size}")
     log.info("imported texCoords ${geo.texCoords.size}")
     log.info("imported indices ${geo.indices.size} (faces ${geo.indices.size / 3})")
+
+    log.debug("indices: ${geo.indices.joinToString(" ")}")
+    log.debug("vertices: ${geo.vertices.joinToString("\n ")}")
 
     /* generate / recalculate normals */
 
