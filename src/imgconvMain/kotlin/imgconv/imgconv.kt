@@ -200,7 +200,7 @@ fun main(args: Array<String>) {
             /* wait for all blocks to be processed */
             var done = 0
             while (done < futures.size) {
-                val ready = futures.waitForMultipleFutures(250)
+                val ready = waitForMultipleFutures(futures,250)
                 ready.forEach {
                     it.consume {
                         done += 1

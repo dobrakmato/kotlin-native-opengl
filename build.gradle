@@ -1,5 +1,5 @@
 plugins {
-    id 'kotlin-multiplatform' version '1.3.11'
+    id 'kotlin-multiplatform' version '1.3.20'
 }
 repositories {
     maven { url 'http://dl.bintray.com/kotlin/kotlin-eap' }
@@ -12,111 +12,106 @@ def konanUserDir = System.getenv("KONAN_DATA_DIR") ?: "${System.getProperty("use
 def resFile = file("$buildDir/konan/res/kogin.res")
 
 kotlin {
-    targets {
-        // For ARM, preset should be changed to presets.iosArm32 or presets.iosArm64
-        // For Linux, preset should be changed to e.g. presets.linuxX64
-        // For MacOS, preset should be changed to e.g. presets.macosX64
 
-        /* libraries */
-        fromPreset(presets.mingwX64, 'math')
-        fromPreset(presets.mingwX64, 'io')
-        fromPreset(presets.mingwX64, 'utils')
-        fromPreset(presets.mingwX64, 'bf')
-        fromPreset(presets.mingwX64, 'gl')
-
-        configure([bf]) {
-            compilations.main {
-                cinterops {
-                    lz4 {
-                    }
+    /* libraries */
+    mingwX64('gl') {
+        compilations.main {
+            cinterops {
+                galogen {
                 }
-            }
-        }
-
-        configure([gl]) {
-            compilations.main {
-                cinterops {
-                    galogen {
-                    }
-                }
-            }
-        }
-
-        /* applications */
-        fromPreset(presets.mingwX64, 'mingw')
-        fromPreset(presets.mingwX64, 'imgconv')
-        fromPreset(presets.mingwX64, 'geoconv')
-        fromPreset(presets.mingwX64, 'bfinfo')
-
-        configure([bfinfo]) {
-            compilations.main.outputKinds('EXECUTABLE')
-            compilations.main.entryPoint = 'bfinfo.main'
-
-            compilations.main {
-                cinterops {
-                    glfw {
-                    }
-                    galogen {
-                    }
-                    lz4 {
-                    }
-
-                }
-                linkerOpts "$resFile"
-            }
-        }
-
-        configure([imgconv]) {
-            compilations.main.outputKinds('EXECUTABLE')
-            compilations.main.entryPoint = 'imgconv.main'
-
-            compilations.main {
-                cinterops {
-                    stb {
-                    }
-                    lz4 {
-                    }
-                }
-                linkerOpts "$resFile"
-            }
-        }
-
-        configure([geoconv]) {
-            compilations.main.outputKinds('EXECUTABLE')
-            compilations.main.entryPoint = 'geoconv.main'
-
-            compilations.main {
-                cinterops {
-                    lz4 {
-                    }
-                }
-                linkerOpts "$resFile"
-            }
-        }
-
-        configure([mingw]) {
-            compilations.main.outputKinds('EXECUTABLE')
-            compilations.main.entryPoint = 'sample.main'
-
-            compilations.main {
-                cinterops {
-                    lz4 {
-                    }
-                    glfw {
-                    }
-                    galogen {
-                    }
-                }
-                linkerOpts "$resFile"
             }
         }
     }
-    sourceSets {
-        // Note: To enable common source sets please comment out 'kotlin.import.noCommonSourceSets' property
-        // in gradle.properties file and re-import your project in IDE.
-        ioMain {
+    mingwX64('io')
+    mingwX64('math')
+    mingwX64('utils')
+    mingwX64('bf') {
+        compilations.main {
+            cinterops {
+                lz4 {
+                }
+            }
         }
+    }
+
+    /* applications */
+    mingwX64('bfinfo') {
+        binaries {
+            executable('bfinfo') {
+                entryPoint = 'bfinfo.main'
+                linkerOpts "$resFile"
+            }
+        }
+
+        compilations.main {
+            cinterops {
+                glfw {
+                }
+                galogen {
+                }
+                lz4 {
+                }
+            }
+        }
+    }
+
+    mingwX64('geoconv') {
+        binaries {
+            executable('geoconv') {
+                entryPoint = 'geoconv.main'
+                linkerOpts "$resFile"
+            }
+        }
+
+        compilations.main {
+            cinterops {
+                lz4 {
+                }
+            }
+        }
+    }
+
+    mingwX64('imgconv') {
+        binaries {
+            executable('imgconv') {
+                entryPoint = 'imgconv.main'
+                linkerOpts "$resFile"
+            }
+        }
+
+        compilations.main {
+            cinterops {
+                stb {
+                }
+                lz4 {
+                }
+            }
+        }
+    }
+
+    mingwX64('mingw') {
+        binaries {
+            executable('mingw') {
+                entryPoint = 'sample.main'
+                linkerOpts "$resFile"
+            }
+        }
+
+        compilations.main {
+            cinterops {
+                lz4 {
+                }
+                glfw {
+                }
+                galogen {
+                }
+            }
+        }
+    }
+
+    sourceSets {
         glMain {
+            dependsOn mathMain
         }
         bfMain {
             dependsOn ioMain
@@ -147,8 +142,6 @@ kotlin {
             dependsOn mathMain
             dependsOn utilsMain
         }
-        mingwTest {
-        }
     }
 }
 
@@ -173,30 +166,6 @@ task generateInterops(type: Copy) {
 task buildNativeProjects(type: Exec) {
     workingDir '.'
     commandLine "bash", "./build_native_projects.sh"
-}
-
-task runProgram {
-    def buildType = 'release' // Change to 'debug' to run application with debug symbols.
-    dependsOn "link${buildType.capitalize()}ExecutableMingw"
-    doLast {
-        def programFile = kotlin.targets.mingw.compilations.main.getBinary('EXECUTABLE', buildType)
-        exec {
-            executable programFile
-            args ''
-        }
-    }
-}
-
-task debugProgram {
-    def buildType = 'debug' // Change to 'debug' to run application with debug symbols.
-    dependsOn "link${buildType.capitalize()}ExecutableMingw"
-    doLast {
-        def programFile = kotlin.targets.mingw.compilations.main.getBinary('EXECUTABLE', buildType)
-        exec {
-            executable 'C:\\cygwin64\\bin\\gdb.exe'
-            args programFile
-        }
-    }
 }
 
 task windowsResources(type: Exec) {
